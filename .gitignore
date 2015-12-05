@@ -1,2 +1,4 @@
 adarnauth/settings.py
 adarnauth/settings.pyc
+
+*.pyc
