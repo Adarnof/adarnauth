@@ -2,22 +2,31 @@ from django.contrib.auth.models import BaseUserManager
 from django import forms
 from eveonline.managers import EVEManager
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 class UserManager(BaseUserManager):
     def _create_user(self, main_character_id, email=None, is_staff=False, is_superuser=False, password=None, **extra_fields):
+        logger.debug("Creating user for character id " + str(main_character_id))
         if not main_character_id:
             raise ValueError('Users require a main character')
         if email:
             email = self.normalize_email(email)
+            logger.debug("Received email for user: " + email)
         user = self.model(main_character_id=main_character_id, email=email, is_staff=is_staff, is_active=True, is_superuser=is_superuser, **extra_fields)
         if password:
             user.set_password(password)
+            logger.debug("Received password for user.")
         else:
             user.set_unusable_password()
+            logger.debug("Setting unusable password for user.")
         main_character = EVEManager.get_character_by_id(main_character_id)
+        logger.debug("Created EVECharacter model for user with character id " + str(main_character_id))
         user.save()
         main_character.user = user
         main_character.save()
+        logger.debug("Assigned character to user.")
         return user
 
     def create_user(self, main_character_id, email=None, **extra_fields):
