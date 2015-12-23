@@ -19,4 +19,9 @@ from django.contrib import admin
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
+
+    #SSO
+    url(r'^login/$', 'authentication.views.login_view'),
+    url(r'^login/callback?code=(?P<code>[w+])&state=(?P<state>[w+])$', 'authentication.views.sso_login'),
+    url(r'^dashboard/$', 'authentication.views.dashboard_view'),
 ]

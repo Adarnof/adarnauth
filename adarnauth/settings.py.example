@@ -53,7 +53,7 @@ ROOT_URLCONF = 'adarnauth.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': ['templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -124,3 +124,7 @@ STATIC_URL = '/static/'
 
 
 AUTH_USER_MODEL = 'authentication.User'
+AUTH_USER_MODEL = 'authentication.User'
+AUTHENTICATION_BACKENDS = ['authentication.managers.AuthenticationManager']
+SSO_CLIENT_ID = os.environ.get('AA_SSO_CLEINT_ID', '')
+SSO_CLIENT_SECRET = os.environ.get('AA_SSO_CLIENT_SECRET', '')

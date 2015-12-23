@@ -2,6 +2,9 @@ from django.contrib.auth.models import BaseUserManager
 from django import forms
 from eveonline.managers import EVEManager
 from datetime import datetime
+import requests
+from django.conf import settings
+import base64
 
 class UserManager(BaseUserManager):
     def _create_user(self, main_character_id, email=None, is_staff=False, is_superuser=False, password=None, **extra_fields):
@@ -28,3 +31,48 @@ class UserManager(BaseUserManager):
         user.is_active=True
         user.save()
         return user
+
+class AuthenticationManager:
+    def authenticate(self, code=None):
+        #first we need to exchange the code for a token
+        client_id = settings.SSO_CLIENT_ID
+        client_secret = settings.SSO_CLIENT_SECRET
+        authorization_code = ':'.join(client_id, client_secret)
+        code_64 = base64.b64encode(authorization_code.encode('utf-8'))
+        authorization = 'Basic ' + code_64
+        custom_headers = {
+            'Authorization': authorization,
+            'content-type': 'application/json',
+        }
+        data = {
+            'grant_type': 'authorization_code',
+            'code': code,
+        }
+        path = "https://login.eveonline.com/oauth/token"
+        r = requests.post(path, headers=custom_headers, json=data)
+        r.raise_for_status()
+        token = r.json()['access_token']
+
+        #now pull character ID from token
+        custom_headers = {'Authorization': 'Bearer ' + token}
+        path = "https://login.eveonline.com/oauth/verify"
+        r = requests.get(path, headers=custom_headers)
+        r.raise_for_status()
+        character_id = r.json()['CharacterID']
+
+        #check if character model exists to return user
+        if EVECharacter.objcets.filter(pk=character_id).exists():
+            character = EVECharacter.objects.get(pk=character_id)
+            if character.user:
+                return character.user
+        #user does not exist for that character
+        user = User.objects.create(character_id)
+        return user
+
+    #internet says I need this
+    def get_user(self, user_id):
+        try:
+            return User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return None
+            
