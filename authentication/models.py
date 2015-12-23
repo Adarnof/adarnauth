@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 # Custom user model. Created based on EVE Character supplemented with an email address.
 class User(AbstractBaseUser, PermissionsMixin):
-    main_character_id = models.CharField(primary_key=True, max_length=254)
+    main_character_id = models.PositiveIntegerField(primary_key=True)
     email = models.EmailField(max_length=255, null=True, blank=True, unique=True)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)
@@ -26,13 +26,13 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name_plural = 'users'
 
     def get_short_name(self):
-        return self.main_character_id
+        return str(self.main_character_id)
 
     def __unicode__(self):
         if self.evecharacter_set.all().filter(id=self.main_character_id).exists():
-            return self.evecharacter_set.all().get(id=self.main_character_id).name.encode('utf-8')
+            return str(self.evecharacter_set.all().get(id=self.main_character_id)).encode('utf-8')
         else:
-            logger.error("Missing character model for user with main character id %s, returning id as __unicode__." % str(self.main_character_id))
+            logger.error("Missing character model for user with main character id %s, returning id as __unicode__." % self.main_character_id)
             return self.get_short_name().encode('utf-8')
 
     def get_characters(self):
