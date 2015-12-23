@@ -2,7 +2,10 @@ from django.shortcuts import render
 from django.contrib.auth import authenticate, login
 
 # Create your views here.
-def sso_login(request, code, state):
+def sso_login(request, parameters):
+    params = parameters.split('&')
+    code = params[0].split('=')[1]
+    state = params[1].split('=')[1]
     user = authenticate(code)
     if user is not None:
         if user.is_active:
