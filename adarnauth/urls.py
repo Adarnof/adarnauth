@@ -22,6 +22,6 @@ urlpatterns = [
 
     #SSO
     url(r'^login/$', 'authentication.views.login_view'),
-    url(r'^login/callback?[w+]$', 'authentication.views.sso_login'),
+    url(r'^login/callback/$', 'authentication.views.sso_login'),
     url(r'^dashboard/$', 'authentication.views.dashboard_view'),
 ]
