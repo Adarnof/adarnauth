@@ -3,8 +3,8 @@ from django.contrib.auth import authenticate, login
 
 # Create your views here.
 def sso_login(request):
-    code = request.POST['code']
-    state = request.POST['state']
+    code = request.GET['code']
+    state = request.GET['state']
     user = authenticate(code)
     if user is not None:
         if user.is_active:
