@@ -1,8 +1,8 @@
 from django.conf import settings
 import requests
 from eveonline.models import EVECharacter
-from models import User
 import base64
+from django.contrib.auth import get_user_model
 
 class AuthenticationBackend(object):
     def authenticate(self, code=None):
@@ -35,13 +35,11 @@ class AuthenticationBackend(object):
         #check if character model exists to return user
         if EVECharacter.objects.filter(character_id=character_id).exists():
             character = EVECharacter.objects.get(character_id=character_id)
-            print character.character_id
             if character.user:
-                print 'char has user'
                 return character.user
         #user does not exist for that character
-        print 'creating user'
-        user = User.objects.create(main_character_id=character_id)
+        user = get_user_model().objects.create_user(main_character_id=character_id)
+        user.save()
         return user
 
     #internet says I need this
