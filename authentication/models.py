@@ -12,7 +12,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=255, null=True, blank=True, unique=True)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)
-    characters = models.ManyToManyField(EVECharacter)
 
     USERNAME_FIELD = 'main_character_id'
     REQUIRED_FIELDS = []
@@ -27,4 +26,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.main_character_id
 
     def __unicode__(self):
-        return self.characters.get(character_id=self.main_character_id).character_name.encode('utf-8')
+        return EVECharacter.objects.get(character_id=self.main_character_id).character_name.encode('utf-8')
+
+    def get_characters(self):
+        return self.evecharacter_set.all()

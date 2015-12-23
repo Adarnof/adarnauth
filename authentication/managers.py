@@ -16,8 +16,8 @@ class UserManager(BaseUserManager):
             user.set_unusable_password()
         main_character = EVEManager.get_character_by_id(main_character_id)
         user.save()
-        user.characters.add(main_character)
-        user.save()
+        main_character.user = user
+        main_character.save()
         return user
 
     def create_user(self, main_character_id, email=None, **extra_fields):

@@ -11,6 +11,6 @@ class EVECharacter(models.Model):
     alliance_name = models.CharField(max_length=254, null=True)
     faction_id = models.CharField(max_length=254, null=True)
     faction_name = models.CharField(max_length=254, null=True)
-
+    user = models.ForeignKey('authentication.User', null=True)
     def __unicode__(self):
         return self.character_name.encode('utf-8')
