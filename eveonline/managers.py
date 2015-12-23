@@ -10,6 +10,13 @@ logger = logging.getLogger(__name__)
 class EVEManager:
     @staticmethod
     def get_character_by_id(character_id):
+        if not type(character_id) is int:
+            try:
+                logger.warn("get_character_by_id passed %s, requires int. Converting %s." % (type(character_id), character_id))
+                character_id = int(character_id)
+            except:
+                logger.error("Unable to cast character_id to int. Returning None.")
+                return None
         if EVECharacter.objects.filter(id=character_id).exists():
             logger.debug("Returning existing character model with id %s" % character_id)
             return EVECharacter.objects.get(id=character_id)
@@ -45,6 +52,13 @@ class EVEManager:
 
     @staticmethod
     def get_corp_by_id(corp_id):
+        if not type(corp_id) is int:
+            try:
+                logger.warn("get_corp_by_id passed %s, requires int. Converting %s." % (type(corp_id), corp_id))
+                corp = int(corp_id)
+            except:
+                logger.error("Unable to cast corp_id to int. Returning None.")
+                return None
         if EVECorporation.objects.filter(id=corp_id).exists():
             logger.debug("Returning existing corp model with id %s" % corp_id)
             return EVECorporation.objects.get(id=corp_id)
@@ -71,6 +85,13 @@ class EVEManager:
 
     @staticmethod
     def get_alliance_by_id(alliance_id):
+        if not type(alliance_id) is int:
+            try:
+                logger.warn("get_alliance_by_id passed %s, requires int. Converting %s." % (type(alliance_id), alliance_id))
+                alliance_id = int(alliance_id)
+            except:
+                logger.error("Unable to cast alliance_id to int. Returning None.")
+                return None
         if EVEAlliance.objects.filter(id=alliance_id).exists():
             logger.debug("Returning existing alliance model with id %s" % alliance_id)
             return EVEAlliance.objects.get(alliance_id=alliance_id)

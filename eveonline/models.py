@@ -21,7 +21,7 @@ class EVECharacter(models.Model):
             return self.name.encode('utf-8')
         else:
             logger.warn("Character name missing in character model for id %s - returning id as __unicode__" % self.id)
-            return self.id.encode('utf-8')
+            return str(self.id).encode('utf-8')
     def update(self):
         logger.debug("Initiating update for character model with id %s" % str(self.id))
         api = evelink.eve.EVE()
@@ -31,6 +31,9 @@ class EVECharacter(models.Model):
         else:
             char_info = result[self.id]
             logger.debug("Retrieved affiliations for character id %s: %s" % (self.id, char_info))
+            if not char_info['name']:
+                logger.error("Received empty response from evelink for character id %s - likely bad character id. Aborting update." % self.id)
+                return
             self.name = char_info['name']
             self.corp_id = char_info['corp']['id']
             self.corp_name = char_info['corp']['name']
@@ -63,12 +66,16 @@ class EVECorporation(models.Model):
             return self.name.encode('utf-8')
         else:
             logger.warn("Corp name missing in corp model for id %s - returning id as __unicode__" % self.id)
-            return self.id.encode('utf-8')
+            return str(self.id).encode('utf-8')
     def update(self):
         logger.debug("Updating corp info for corp id %s" % self.id)
         a = evelink.api.API()
         api = evelink.corp.Corp(a)
-        result = api.corporation_sheet(corp_id=self.id).result
+        try:
+            result = api.corporation_sheet(corp_id=self.id).result
+        except:
+            logger.exception("Error occured retrieving corporation sheet for id %s - likely bad corp id. Aborting update." % self.id, exc_info=True)
+            return
         logger.debug("Got corporation sheet from api for corp id %s: name %s ticker %s members %s" % (result['id'], result['name'], result['ticker'], result['members']['current']))
         self.name = result['name']
         self.alliance_id = result['alliance']['id']
@@ -87,7 +94,7 @@ class EVEAlliance(models.Model):
             return self.name.encode('utf-8')
         else:
             logger.warn("Alliance name missing in alliance models for id %s - returning id as __unicode__" % self.id)
-            return self.id.encode('utf-8')
+            return str(self.id).encode('utf-8')
 
 class EVEApiKeyPair(models.Model):
     id = models.PositiveIntegerField(primary_key=True)
