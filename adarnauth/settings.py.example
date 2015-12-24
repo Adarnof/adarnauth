@@ -142,16 +142,16 @@ LOGGING = {
         },
     },
     'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': 'debug.log',
+            'formatter': 'verbose'
+        },
         'django_file': {
             'level': 'WARN',
             'class': 'logging.FileHandler',
             'filename': 'django.log',
-            'formatter': 'verbose'
-        },
-        'authentication_file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': 'authentication.log',
             'formatter': 'verbose'
         },
     },
@@ -162,8 +162,12 @@ LOGGING = {
             'level':'DEBUG',
         },
         'authentication': {
-            'handlers': ['authentication_file'],
-            'level': 'DEBUG',
+            'handlers': ['file'],
+            'level': 'INFO',
         },
+        'eveonline': {
+            'handlers': ['file'],
+            'level': 'INFO',
+        }
     }
 }
