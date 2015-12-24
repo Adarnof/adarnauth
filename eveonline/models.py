@@ -25,8 +25,8 @@ class EVECharacter(models.Model):
 class EVECorporation(models.Model):
     id = models.CharField(max_length=254, primary_key=True)
     name = models.CharField(max_length=254)
-    alliance_id = models.CharField(max_length=254)
-    alliance_name = models.CharField(max_length=254)
+    alliance_id = models.CharField(max_length=254, null=True)
+    alliance_name = models.CharField(max_length=254, null=True)
     members = models.CharField(max_length=254)
     ticker = models.CharField(max_length=254)
     def __unicode__(self):
@@ -46,3 +46,11 @@ class EVEAlliance(models.Model):
         else:
             logger.warn("Alliance name missing in alliance models for id %s - returning id as __unicode__" % self.id)
             return self.id.encode('utf-8')
+
+class EVEApiKeyPair(models.Model):
+    id = models.CharField(max_length=254, primary_key=True)
+    vcode = models.CharField(max_length=254)
+    owner = models.ForeignKey('authentication.User', null=True)
+    is_valid = models.NullBooleanField()
+    def __unicode__(self):
+        return 'API Key %s' % self.id
