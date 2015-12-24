@@ -30,7 +30,7 @@ class StandingAccess(models.Model):
         return output.encode('utf-8')
 
 class Access(models.Model):
-    access_mode = models.NullBooleanField()
+    mode = models.NullBooleanField()
     object_id = models.PositiveIntegerField()
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     content_object = GenericForeignKey('content_type', 'object_id')
@@ -38,11 +38,11 @@ class Access(models.Model):
         output = '%s for %s' % (self._get_mode_string(), self.content_object)
         return output.encode('utf-8')
     def _get_mode_string(self):
-        if self.access_mode == None:
+        if self.mode == None:
             return 'None'
-        elif self.access_mode == True:
+        elif self.mode == True:
             return 'Full'
-        elif self.access_mode == False:
+        elif self.mode == False:
             return 'Limited'
         else:
             return 'Unknown'
