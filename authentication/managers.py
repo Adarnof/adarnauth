@@ -33,5 +33,6 @@ class UserManager(BaseUserManager):
         user = self._create_user(main_character_id=main_character_id, is_staff=True, is_superuser=True, **extra_fields)
         user.is_active=True
         user.save()
+        logger.info("Created superuser: %s" % str(user))
         return user
             
