@@ -16,12 +16,13 @@ Including another URLconf
 """
 from django.conf.urls import url
 from django.contrib import admin
+import authentication.views
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
 
     #SSO
-    url(r'^login/$', 'authentication.views.login_view'),
-    url(r'^login/callback/$', 'authentication.views.sso_login'),
-    url(r'^dashboard/$', 'authentication.views.dashboard_view'),
+    url(r'^login/$', authentication.views.login_view),
+    url(r'^login/callback/$', authentication.views.sso_login),
+    url(r'^dashboard/$', authentication.views.dashboard_view),
 ]
