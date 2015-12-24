@@ -3,3 +3,4 @@ adarnauth/settings.py
 *.log
 eveonline/migrations/*
 authentication/migrations/*
+access/migrations/*
