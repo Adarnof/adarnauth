@@ -35,3 +35,14 @@ class EVECorporation(models.Model):
         else:
             logger.warn("Corp name missing in corp model for id %s - returning id as __unicode__" % self.corp_id)
             return self.corp_id.encode('utf-8')
+
+class EVEAlliance(models.Model):
+    alliance_id = models.CharField(max_length=254, primary_key=True)
+    alliance_name = models.CharField(max_length=254)
+    ticker = models.CharField(max_length=254)
+    def __unicode__(self):
+        if self.alliance_name:
+            return self.alliance_name.encode('utf-8')
+        else:
+            logger.warn("Alliance name missing in alliance models for id %s - returning id as __unicode__" % self.alliance_id)
+            return self.alliance_id.encode('utf-8')

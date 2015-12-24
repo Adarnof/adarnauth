@@ -1,5 +1,6 @@
 from models import EVECharacter
 from models import EVECorporation
+from models import EVEAlliance
 import evelink.api
 import evelink.char
 import evelink.eve
@@ -111,3 +112,41 @@ class EVEManager:
         corp.ticker = result['ticker']
         corp.save()
         logger.info("Updated corp info for %s" % str(corp))
+
+    @staticmethod
+    def get_alliance_by_id(alliance_id):
+        if EVEAlliance.objects.filter(alliance_id=alliance_id).exists():
+            logger.debug("Returning existing alliance model with id %s" % str(alliance_id))
+            return EVEAlliance.objects.get(alliance_id=alliance_id)
+        else:
+            logger.debug("No alliance model exists for id %s - triggering creation." % str(alliance_id))
+            EVEManager.create_alliances([alliance_id])
+            logger.debug("Returning new alliance model with id %s" % str(alliance_id))
+            return EVEAlliance.objects.get(alliance_id=alliance_id)
+
+    @staticmethod
+    def create_alliances(alliance_ids):
+        for id in alliance_ids:
+            alliance, created = EVEAlliance.objects.get_or_create(alliance_id = id)
+            if created:
+                logger.info("Created model for alliance id %s" % str(id))
+            else:
+                logger.warn("Attempting to create existing model for alliance id %s" % str(id))
+            EVEManager.update_alliances([id])
+
+    @staticmethod
+    def update_alliances(ids):
+        api = evelink.eve.EVE()
+        result = api.alliances().result
+        for id in ids:
+            alliance = EVEManager.get_alliance_by_id(id)
+            if id in result:
+                logger.debug("Alliance id %s found in alliance list, updating." % id)
+                alliance.alliance_name = result[id]['name']
+                alliance.ticker = result[id]['ticker']
+                alliance.save()
+                logger.info("Updated alliance info for %s" % str(alliance))
+            else:
+                logger.info("Alliance %s no longer exists. Deleting model." % id)
+                alliance.delete()
+        logger.debug("Finished updating alliance models %s" % str(ids))
