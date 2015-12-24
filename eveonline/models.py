@@ -103,3 +103,18 @@ class EVEApiKeyPair(models.Model):
     is_valid = models.NullBooleanField()
     def __unicode__(self):
         return 'API Key %s' % self.id
+
+class EVEStanding(models.Model):
+    id = models.PositiveIntegerField(primary_key=True)
+    name = models.CharField(max_length=254, null=True)
+    standing = models.DecimalField(max_digits=3, decimal_places=1, null=True)
+    type = models.CharField(max_length=254, null=True)
+    source_api = models.ForeignKey(EVEApiKeyPair, on_delete=models.CASCADE)
+    def __unicode__(self):
+        if name and type:
+            output = 'Standing level %s to %s %s' % (self.standing, self.type, self.name)
+            return output.encode('utf-8')
+        else:
+            logger.warn("Incomplete standing model for id %s - returning id as __unicode__" % self.id)
+            output = 'Standing to %s' % self.id
+            return output.encode('utf-8')
