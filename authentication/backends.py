@@ -46,8 +46,8 @@ class AuthenticationBackend(object):
         logger.debug("Received character id %s" % str(character_id))
 
         #check if character model exists to return user
-        if EVECharacter.objects.filter(character_id=character_id).exists():
-            character = EVECharacter.objects.get(character_id=character_id)
+        if EVECharacter.objects.filter(id=character_id).exists():
+            character = EVECharacter.objects.get(id=character_id)
             logger.debug("EVECharacter model exists for character id %s" % str(character_id))
             if character.user:
                 logger.debug("Retrieved user for character id %s" % str(character_id))
