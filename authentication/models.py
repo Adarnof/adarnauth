@@ -5,7 +5,6 @@ from django.utils.http import urlquote
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from managers import UserManager
 from eveonline.models import EVECharacter
-from access.models import Access
 import logging
 
 logger = logging.getLogger(__name__)
@@ -16,8 +15,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=255, null=True, blank=True, unique=True)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)
-
-    access = models.ForeignKey(Access, on_delete=models.SET_NULL, null=True)
 
     USERNAME_FIELD = 'main_character_id'
     REQUIRED_FIELDS = []
