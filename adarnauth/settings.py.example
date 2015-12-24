@@ -124,7 +124,8 @@ STATIC_URL = '/static/'
 
 
 AUTH_USER_MODEL = 'authentication.User'
-AUTHENTICATION_BACKENDS = ['authentication.managers.AuthenticationManager']
+AUTH_USER_MODEL = 'authentication.User'
+AUTHENTICATION_BACKENDS = ['authentication.backends.AuthenticationBackend']
 SSO_CLIENT_ID = os.environ.get('AA_SSO_CLEINT_ID', '')
 SSO_CLIENT_SECRET = os.environ.get('AA_SSO_CLIENT_SECRET', '')
 
@@ -141,21 +142,27 @@ LOGGING = {
         },
     },
     'handlers': {
-        'file': {
+        'django_file': {
+            'level': 'WARN',
+            'class': 'logging.FileHandler',
+            'filename': 'django.log',
+            'formatter': 'verbose'
+        },
+        'authentication_file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': 'mysite.log',
+            'filename': 'authentication.log',
             'formatter': 'verbose'
         },
     },
     'loggers': {
         'django': {
-            'handlers':['file'],
+            'handlers':['django_file'],
             'propagate': True,
             'level':'DEBUG',
         },
         'authentication': {
-            'handlers': ['file'],
+            'handlers': ['authentication_file'],
             'level': 'DEBUG',
         },
     }

@@ -9,7 +9,10 @@ logger = logging.getLogger(__name__)
 
 class AuthenticationBackend(object):
     def authenticate(self, code=None):
-        logger.info("Attempting login with code: " + code)
+        logger.debug("Attempting login with code: " + code)
+        if not code:
+            logger.debug("No code supplied, unable to get user model.")
+            return None
         #first we need to exchange the code for a token
         client_id = settings.SSO_CLIENT_ID
         client_secret = settings.SSO_CLIENT_SECRET
@@ -26,7 +29,9 @@ class AuthenticationBackend(object):
         }
         path = "https://login.eveonline.com/oauth/token"
         r = requests.post(path, headers=custom_headers, json=data)
-        r.raise_for_status()
+        if not r.status_code in [200, 201]:
+            logger.error("Received bad status from code exchange: " + r.status_code)
+            return None
         token = r.json()['access_token']
         logger.debug("Received access token: " + token)
 
@@ -34,7 +39,9 @@ class AuthenticationBackend(object):
         custom_headers = {'Authorization': 'Bearer ' + token}
         path = "https://login.eveonline.com/oauth/verify"
         r = requests.get(path, headers=custom_headers)
-        r.raise_for_status()
+        if not r.status_code in [200,201]:
+            logger.error("Received bad status from token validation: " + r.status_code)
+            return None
         character_id = r.json()['CharacterID']
         logger.debug("Received character id " + str(character_id))
 
@@ -43,12 +50,13 @@ class AuthenticationBackend(object):
             character = EVECharacter.objects.get(character_id=character_id)
             logger.debug("EVECharacter model exists for character id " + str(character_id))
             if character.user:
-                logger.info("Retrieved user for character id " + str(character_id))
+                logger.debug("Retrieved user for character id " + str(character_id))
                 return character.user
         #user does not exist for that character
-        logger.info("No user found for character id " + str(character_id) + ", calling creation.")
+        logger.debug("No user found for character id " + str(character_id))
         user = get_user_model().objects.create_user(main_character_id=character_id)
         user.save()
+        logger.debug("Retrieved user for character id " + str(character_id))
         return user
 
     #internet says I need this

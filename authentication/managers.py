@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 class UserManager(BaseUserManager):
     def _create_user(self, main_character_id, email=None, is_staff=False, is_superuser=False, password=None, **extra_fields):
-        logger.debug("Creating user for character id " + str(main_character_id))
+        logger.info("Creating user for character id " + str(main_character_id))
         if not main_character_id:
             raise ValueError('Users require a main character')
         if email:
