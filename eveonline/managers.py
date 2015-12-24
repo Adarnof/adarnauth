@@ -1,7 +1,9 @@
 from models import EVECharacter
+from models import EVECorporation
 import evelink.api
 import evelink.char
 import evelink.eve
+import evelink.corp
 import logging
 
 logger = logging.getLogger(__name__)
@@ -28,7 +30,7 @@ class EVEManager:
             if created:
                 logger.info("Created model for character id %s" % str(id))
             else:
-                logger.warn("Attempting to create existing models for character id %s" % str(id))
+                logger.warn("Attempting to create existing model for character id %s" % str(id))
         EVEManager.update_characters(result)
 
     @staticmethod
@@ -71,3 +73,41 @@ class EVEManager:
         character.user = user
         character.save()
         logger.info("Assigned character id %s to user %s" % (str(character_id), str(user)))
+
+    @staticmethod
+    def get_corp_by_id(corp_id):
+        if EVECorporation.objects.filter(corp_id=corp_id).exists():
+            logger.debug("Returning existing corp model with id %s" % str(corp_id))
+            return EVECorporation.objects.get(corp_id=corp_id)
+        else:
+            logger.debug("No corp model exists for id %s - triggering creation." % str(corp_id))
+            EVEManager.create_corps([corp_id])
+            logger.debug("Returning new corp model with id %s" % str(corp_id))
+            return EVECorporation.objects.get(corp_id=corp_id)
+
+    @staticmethod
+    def create_corps(corp_ids):
+        for id in corp_ids:
+            corp, created = EVECorporation.objects.get_or_create(corp_id = id)
+            if created:
+                logger.info("Created model for corp id %s" % str(id))
+            else:
+                logger.warn("Attempting to create existing model for corp id %s" % str(id))
+            EVEManager.update_corp(id)
+
+    @staticmethod
+    def update_corp(corp_id):
+        logger.debug("Updating corp info for corp id %s" % str(corp_id))
+        a = evelink.api.API()
+        api = evelink.corp.Corp(a)
+        result = api.corporation_sheet(corp_id=corp_id).result
+        logger.debug("Got corporation sheet from api for corp id %s: name %s ticker %s members %s" % (result['id'], result['name'], result['ticker'], result['members']['current']))
+        corp = EVEManager.get_corp_by_id(corp_id)
+        logger.debug("Got corp models for id %s" % str(corp_id))
+        corp.corp_name = result['name']
+        corp.alliance_id = result['alliance']['id']
+        corp.alliance_name = result['alliance']['name']
+        corp.members = result['members']['current']
+        corp.ticker = result['ticker']
+        corp.save()
+        logger.info("Updated corp info for %s" % str(corp))
