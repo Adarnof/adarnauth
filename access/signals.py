@@ -27,7 +27,7 @@ def post_delete_standingaccess(sender, instance, *args, **kwargs):
 
 @receiver(post_delete, sender=UserAccess)
 def post_delete_useraccess(sender, instance, *args, **kwargs):
-    if hasattr(instance, 'user'):
+    if instance.user:
         logger.info("Received post_delete signal from UserAccess models %s. Triggering generation of new UserAccess for uer %s" % (instance, instance.user))
         # call function to evaluate user access here
     else:
