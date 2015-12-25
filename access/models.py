@@ -16,6 +16,14 @@ class UserAccess(models.Model):
         return output.encode('utf-8')
     class Meta:
         permissions = (("site_access", "User has access to site."),)
+    def set_rule(self, object):
+        if isinstance(object, CharacterAccess) or isinstance(object, CorpAccess) or isinstance(object, AllianceAccess) or isinstance(object, StandingAccess):
+            self.object_id = object.pk
+            self.content_object = object
+        else:
+            raise TypeError("Access rule must be of type CharacterAccess, CorpAccess, AllianceAccess, StandingAccess.")
+    def get_rule(self):
+        return self.content_object
 
 class CorpAccess(models.Model):
     corp = models.OneToOneField(EVECorporation, models.CASCADE)
