@@ -2,6 +2,7 @@ from models import CorpAccess, AllianceAccess, CharacterAccess, StandingAccess, 
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 import logging
+from django.contrib.auth.models import Permission
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,11 @@ def post_delete_standingaccess(sender, instance, *args, **kwargs):
 @receiver(post_delete, sender=UserAccess)
 def post_delete_useraccess(sender, instance, *args, **kwargs):
     if instance.user:
-        logger.info("Received post_delete signal from UserAccess models %s. Triggering generation of new UserAccess for uer %s" % (instance, instance.user))
-        # call function to evaluate user access here
+        logger.info("Received post_delete signal from UserAccess models %s. Triggering generation of new UserAccess for user %s" % (instance, instance.user))
+        if instance.user.access_set.all().exists():
+            logger.info("User %s retains access due to existing access rules." % user)
+        else:
+            logger.info("Stripping user %s access due to lack of access rules." % user)
+            #strip permission command
     else:
         logger.info("Received post_delete signal from UserAccess model %s. No affiliated user found. Ignoring." % instance)
