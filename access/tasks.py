@@ -133,7 +133,7 @@ def generate_useraccess_by_allianceaccess(aa):
 def post_delete_useraccess(sender, instance, *args, **kwargs):
     if instance.user:
         logger.info("Received post_delete signal from UserAccess models %s. Triggering assessment of user %s access rights." % (instance, instance.user))
-        assess_access.delay(user)
+        assess_access.delay(instance.user)
     else:
         logger.info("Received post_delete signal from UserAccess model %s. No affiliated user found. Ignoring." % instance)
 
