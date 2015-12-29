@@ -123,13 +123,14 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-
+# SSO
 AUTH_USER_MODEL = 'authentication.User'
 AUTH_USER_MODEL = 'authentication.User'
 AUTHENTICATION_BACKENDS = ['authentication.backends.AuthenticationBackend']
 SSO_CLIENT_ID = os.environ.get('AA_SSO_CLEINT_ID', '')
 SSO_CLIENT_SECRET = os.environ.get('AA_SSO_CLIENT_SECRET', '')
 
+# Logging
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -172,4 +173,10 @@ LOGGING = {
         }
     }
 }
+
+# Celery
+BROKER_URL = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
 
