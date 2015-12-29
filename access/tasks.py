@@ -3,8 +3,10 @@ from __future__ import absolute_import
 from celery import shared_task
 import logging
 from django.contrib.contenttypes.models import ContentType
-from models import UserAccess, CharacterAccess, CorpAccess, AllianceAccess
+from access.models import UserAccess, CharacterAccess, CorpAccess, AllianceAccess
 from eveonline.models import EVECorporation, EVEAlliance
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 
 logger = logging.getLogger(__name__)
 
@@ -126,3 +128,12 @@ def generate_useraccess_by_allianceaccess(aa):
                 logger.debug("AllianceAccess rule %s does not apply to user %s" % (aa, user))
                 continue
     logger.info("Completed assigning AllianceAccess rule %s to users." % aa)
+
+@receiver(post_delete, sender=UserAccess)
+def post_delete_useraccess(sender, instance, *args, **kwargs):
+    if instance.user:
+        logger.info("Received post_delete signal from UserAccess models %s. Triggering assessment of user %s access rights." % (instance, instance.user))
+        assess_access.delay(user)
+    else:
+        logger.info("Received post_delete signal from UserAccess model %s. No affiliated user found. Ignoring." % instance)
+
