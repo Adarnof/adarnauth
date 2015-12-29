@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from celery import shared_task
 import logging
 from django.contrib.contenttypes.models import ContentType
-from access.models import UserAccess, CharacterAccess, CorpAccess, AllianceAccess
+from models import UserAccess, CharacterAccess, CorpAccess, AllianceAccess
 from eveonline.models import EVECorporation, EVEAlliance
 
 logger = logging.getLogger(__name__)
@@ -49,22 +49,21 @@ def assign_access(user):
 @shared_task
 def generate_useraccess_by_characteraccess(ca):
     ct = ContentType.get_for_model(ca)
-    logger.debug("Assigning UserAccess by CharacterAccess rule %s" % ca
+    logger.debug("Assigning UserAccess by CharacterAccess rule %s" % ca)
     char = ca.character
     if char.user:
         user = char.user
         logger.debug("Character for CharacterAccess rule %s has user %s assigned." % (ca, user))
         useraccess = user.useraccess_set.all().filter(content_type = ct)
         for ua in useraccess:
-            if ua.content_object = ca and ua.object_id = ca.id:
+            if ua.content_object == ca and ua.object_id == ca.id:
+                logger.debug("User %s already has CharacterAccess rule %s applied." % (user, ca))
                 break
         else:
             logger.debug("User %s does not have CharacterAccess rule %s applied." % (user, ca))
             ua = UserAccess(user=user)
             ua.set_rule(ca)
             ua.save()
-        break:
-            logger.debug("User %s already has CharacterAccess rule %s applied." % (user, ca))
     else:
         logger.warn("No user set for character %s. Unable to apply CharacterAccess %s" % (char, ca))
 
@@ -77,7 +76,8 @@ def genereate_useraccess_by_corpaccess(ca):
         logger.debug("Checking CorpAccess rules for user %s" % user)
         useraccess = user.useraccess_set.all().filter(content_type = ct)
         for ua in useraccess:
-            if ua.content_object = ca and ua.object_id = ca.id:
+            if ua.content_object == ca and ua.object_id == ca.id:
+                logger.debug("User %s already has CorpAccess rule %s applied." % (user, ca))
                 break
         else:
             corp = ca.corp
@@ -90,16 +90,11 @@ def genereate_useraccess_by_corpaccess(ca):
                     ua = UserAccess(user = user)
                     ua.set_rule(ca)
                     ua.save()
+                    logger.info("Applied CorpAccess rule %s to user %s." % (ca, user))
                     break
-             else:
-                 logger.debug("CorpAccess rule %s does not apply to user %s" % (ca, user))
-                 continue
-             break:
-                 logger.info("Applied CorpAccess rule %s to user %s." % (ca, user))
-                 continue
-        break:
-            logger.debug("User %s already has CorpAccess rule %s applied." % (user, ca))
-            continue
+            else:
+                logger.debug("CorpAccess rule %s does not apply to user %s" % (ca, user))
+                continue
     logger.info("Completed assigning CorpAccess rule %s to users." % ca)
 
 @shared_task
@@ -111,7 +106,8 @@ def generate_useraccess_by_allianceaccess(aa):
         logger.debug("Checking AllianceAccess rules for user %s" % user)
         useraccess = user.useraccess_set.all().filter(content_type = ct)
         for ua in useraccess:
-            if ua.content_object = aa and ua.object_id = aa.id:
+            if ua.content_object == aa and ua.object_id == aa.id:
+                logger.debug("User %s already has AllianceAccess rule %s applied." % (user, aa))
                 break
         else:
             alliance = ca.alliance
@@ -124,14 +120,9 @@ def generate_useraccess_by_allianceaccess(aa):
                     ua = UserAccess(user = user)
                     ua.set_rule(aa)
                     ua.save()
+                    logger.info("Applied AllianceAccess rule %s to user %s." % (aa, user))
                     break
-             else:
-                 logger.debug("AllianceAccess rule %s does not apply to user %s" % (aa, user))
-                 continue
-             break:
-                 logger.info("Applied AllianceAccess rule %s to user %s." % (aa, user))
-                 continue
-        break:
-            logger.debug("User %s already has AllianceAccess rule %s applied." % (user, aa))
-            continue
+            else:
+                logger.debug("AllianceAccess rule %s does not apply to user %s" % (aa, user))
+                continue
     logger.info("Completed assigning AllianceAccess rule %s to users." % aa)

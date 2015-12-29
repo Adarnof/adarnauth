@@ -5,6 +5,11 @@ from eveonline.models import EVECharacter, EVECorporation, EVEAlliance, EVEStand
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from authentication.models import User
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
+import logging
+
+logger = logging.getLogger(__name__)
 
 class UserAccess(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -52,3 +57,12 @@ class StandingAccess(models.Model):
     def __unicode__(self):
         output = 'standing %s' % self.standing
         return output.encode('utf-8')
+
+@receiver(post_delete, sender=UserAccess)
+def post_delete_useraccess(sender, instance, *args, **kwargs):
+    if instance.user:
+        logger.info("Received post_delete signal from UserAccess models %s. Triggering assessment of user %s access rights." % (instance, instance.user))
+        from tasks import assess_access
+        assess_access.delay(user)
+    else:
+        logger.info("Received post_delete signal from UserAccess model %s. No affiliated user found. Ignoring." % instance)
