@@ -47,7 +47,7 @@ class EVEManager:
         if character.user:
             logger.warn("Reassigning character from user %s to %s" % (char.user, user))
         character.user = user
-        character.save()
+        character.save(update_fields=['user'])
         logger.info("Assigned character id %s to user %s" % (character_id, user))
 
     @staticmethod

@@ -37,25 +37,49 @@ class EVECharacter(models.Model):
             if not char_info['name']:
                 logger.error("Received empty response from evelink for character id %s - likely bad character id. Aborting update." % self.id)
                 return
-            self.name = char_info['name']
-            self.corp_id = char_info['corp']['id']
-            self.corp_name = char_info['corp']['name']
+            update_fields = []
+            if self.name != char_info['name']:
+                self.name = char_info['name']
+                update_fields.append('name')
+            if self.corp_id != char_info['corp']['id']:
+                self.corp_id = char_info['corp']['id']
+                update_fields.append('corp_id')
+            if self.corp_name != char_info['corp']['name']:
+                self.corp_name = char_info['corp']['name']
+                update_fields.append('corp_name')
             if 'faction' in char_info:
-                self.faction_id = char_info['faction']['id']
-                self.faction_name = char_info['faction']['name']
+                if self.faction_id != char_info['faction']['id']:
+                    self.faction_id = char_info['faction']['id']
+                    update_fields.append('faction_id')
+                if self.faction_name != char_info['faction']['name']:
+                    self.faction_name = char_info['faction']['name']
+                    update_fields.append('faction_name')
             else:
                 logger.debug("No faction data found for character id %s. Blanking" % self.id)
-                self.faction_id = None
-                self.faction_name = None
+                if self.faction_id:
+                    self.faction_id = None
+                    update_fields.append('faction_id')
+                if self.faction_name:
+                    self.faction_name = None
+                    update_fields.append('faction_name')
             if 'alliance' in char_info:
-                self.alliance_id = char_info['alliance']['id']
-                self.alliance_name = char_info['alliance']['name']
+                if self.alliance_id != char_info['alliance']['id']:
+                    self.alliance_id = char_info['alliance']['id']
+                    update_fields.append('alliance_id')
+                if self.alliance_name != char_info['alliance']['name']:
+                    self.alliance_name = char_info['alliance']['name']
+                    update_fields.append('alliance_name')
             else:
                 logger.debug("No alliance data found for character id %s. Blanking." % self.id)
-                self.alliance_id = None
-                self.alliance_name = None
-            logger.info("Finished updating character id %s from api." % self.id)
-            self.save()
+                if self.alliance_id:
+                    self.alliance_id = None
+                    update_fields.append('alliance_id')
+                if self.alliance_name:
+                    self.alliance_name = None
+                    update_fields.append('alliance_name')
+            logger.info("Finished updating character id %s from api. Changed: %s" % (self.id, update_fields))
+            if update_fields:
+                self.save(update_fields=update_fields)
 
 class EVECorporation(models.Model):
     id = models.PositiveIntegerField(primary_key=True)
@@ -80,14 +104,26 @@ class EVECorporation(models.Model):
         except:
             logger.exception("Error occured retrieving corporation sheet for id %s - likely bad corp id. Aborting update." % self.id, exc_info=True)
             return
+        update_fields = []
         logger.debug("Got corporation sheet from api for corp id %s: name %s ticker %s members %s" % (result['id'], result['name'], result['ticker'], result['members']['current']))
-        self.name = result['name']
-        self.alliance_id = result['alliance']['id']
-        self.alliance_name = result['alliance']['name']
-        self.members = result['members']['current']
-        self.ticker = result['ticker']
-        logger.info("Finished updating corp info for id %s from api." % self.id)
-        self.save()
+        if self.name != result['name']:
+            self.name = result['name']
+            update_fields.append('name')
+        if self.alliance_id != result['alliance']['id']:
+            self.alliance_id = result['alliance']['id']
+            update_fields.append('alliance_id')
+        if self.alliance_name != result['alliance']['name']:
+            self.alliance_name = result['alliance']['name']
+            update_fields.append('alliance_name')
+        if self.members != result['members']['current']:
+            self.members = result['members']['current']
+            update_fields.append('members')
+        if self.ticker != result['ticker']:
+            self.ticker = result['ticker']
+            update_fields.append('ticker')
+        logger.info("Finished updating corp info for id %s from api. Changed: %s" % (self.id, update_fields))
+        if update_fields:
+            self.save()
 
 class EVEAlliance(models.Model):
     id = models.PositiveIntegerField(primary_key=True)

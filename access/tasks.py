@@ -3,11 +3,12 @@ from __future__ import absolute_import
 from celery import shared_task
 import logging
 from django.contrib.contenttypes.models import ContentType
-from access.models import UserAccess, CharacterAccess, CorpAccess, AllianceAccess
-from eveonline.models import EVECorporation, EVEAlliance
-from django.db.models.signals import post_delete
+from access.models import UserAccess, CharacterAccessRule, CorpAccessRule, AllianceAccessRule
+from eveonline.models import EVECharacter, EVECorporation, EVEAlliance
+from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.contrib.auth.models import Permission
+from eveonline.signals import character_changed_corp, character_changed_alliance, character_changed_user
 
 logger = logging.getLogger(__name__)
 
@@ -34,15 +35,15 @@ def assign_access(user):
     chars = user.get_characters()
     for char in chars:
         logger.debug("Assigning acces for user %s based on character %s" % (user, char))
-        if CharacterAcces.objects.filter(character=char).exists():
-            ca = CharacterAccess.objects.get(character=char)
+        if CharacterAccesRule.objects.filter(character=char).exists():
+            ca = CharacterAccessRule.objects.get(character=char)
             logger.debug("CharacterAccess rule exists for character %s. Assigning." % char)
             generate_useraccess_by_characteraccess(ca)
         if EVECorporation.objects.filter(id=char.corp_id).exists():
             logger.debug("Corp model exists for character %s corp %s" % (char, char.corp_name))
             corp = EVECorporation.objects.get(id=char.corp_id)
-            if CorpAccess.objects.filter(corp=corp).exists():
-                ca = CorpAcces.objects.get(corp=corp)
+            if CorpAccessRule.objects.filter(corp=corp).exists():
+                ca = CorpAccesRule.objects.get(corp=corp)
                 logger.debug("CorpAccess rule exists for corp %s. Assigning." % corp)
                 ua = UserAccess(user=user)
                 ua.set_rule(ca)
@@ -50,8 +51,8 @@ def assign_access(user):
         if EVEAlliance.objects.filter(id=char.alliance_id).exists():
             logger.debug("Alliance model exists for character %s alliance %s" % (char, char.alliance_name))
             alliance = EVEAlliance.objects.get(id=char.alliance_id)
-            if AllianceAccess.objects.filter(alliance=alliance).exists():
-                aa = AllianceAccess.objects.get(alliance=alliance)
+            if AllianceAccessRule.objects.filter(alliance=alliance).exists():
+                aa = AllianceAccessRule.objects.get(alliance=alliance)
                 logger.debug("AllianceAccess rule exists for alliance %s. Assigning." % alliance)
                 ua = UserAccess(user=user)
                 ua.set_rule(aa)
@@ -69,7 +70,7 @@ def generate_useraccess_by_characteraccess(ca):
         logger.debug("Character for CharacterAccess rule %s has user %s assigned." % (ca, user))
         useraccess = user.useraccess_set.all().filter(content_type = ct)
         for ua in useraccess:
-            if ua.content_object == ca and ua.object_id == ca.id:
+            if ua.access_rule == ca and ua.object_id == ca.id:
                 logger.debug("User %s already has CharacterAccess rule %s applied." % (user, ca))
                 break
         else:
@@ -89,7 +90,7 @@ def genereate_useraccess_by_corpaccess(ca):
         logger.debug("Checking CorpAccess rules for user %s" % user)
         useraccess = user.useraccess_set.all().filter(content_type = ct)
         for ua in useraccess:
-            if ua.content_object == ca and ua.object_id == ca.id:
+            if ua.access_rule == ca and ua.object_id == ca.id:
                 logger.debug("User %s already has CorpAccess rule %s applied." % (user, ca))
                 break
         else:
@@ -119,7 +120,7 @@ def generate_useraccess_by_allianceaccess(aa):
         logger.debug("Checking AllianceAccess rules for user %s" % user)
         useraccess = user.useraccess_set.all().filter(content_type = ct)
         for ua in useraccess:
-            if ua.content_object == aa and ua.object_id == aa.id:
+            if ua.access_rule == aa and ua.object_id == aa.id:
                 logger.debug("User %s already has AllianceAccess rule %s applied." % (user, aa))
                 break
         else:
@@ -143,8 +144,59 @@ def generate_useraccess_by_allianceaccess(aa):
 @receiver(post_delete, sender=UserAccess)
 def post_delete_useraccess(sender, instance, *args, **kwargs):
     if instance.user:
-        logger.info("Received post_delete signal from UserAccess models %s. Triggering assessment of user %s access rights." % (instance, instance.user))
+        logger.debug("Received post_delete signal from UserAccess models %s. Triggering assessment of user %s access rights." % (instance, instance.user))
         assess_access.delay(instance.user)
     else:
-        logger.info("Received post_delete signal from UserAccess model %s. No affiliated user found. Ignoring." % instance)
+        logger.debug("Received post_delete signal from UserAccess model %s. No affiliated user found. Ignoring." % instance)
 
+@receiver(character_changed_corp, sender=EVECharacter)
+def useraccess_check_on_character_changed_corp(sender, character, *args, **kwargs):
+    ct = ContentType.objects.get_for_model(EVECorporation)
+    ua = UserAccess.objects.filter(content_type=ct).filter(character=character)
+    logger.debug("Received character_changed_corp signal from character %s - checking %s useraccess models." % (character, len(ua)))
+    for u in ua:
+        if u.access_rule.corp.id != character.corp_id:
+            logger.info("Character %s new corp does not apply to corpaccess rule %s - deleting useraccess." % (character, u.access_rule))
+            u.delete()
+
+@receiver(character_changed_alliance, sender=EVECharacter)
+def useraccess_check_on_character_changed_alliance(sender, character, *args, **kwargs):
+    ct = ContentType.objects.get_for_model(EVEAlliance)
+    ua = UserAccess.objects.filter(content_type=ct).filter(character=character)
+    logger.debug("Received character_changed_alliance signal from character %s - checking %s useraccess models." % (character, len(ua)))
+    for u in ua:
+        if u.acces_rule.alliance.id != character.alliance_id:
+            logger.info("Character %s new alliance does not apply to allianceaccess rule %s - deleting useraccess." % (character, u.access_rule))
+
+@receiver(character_changed_user, sender=EVECharacter)
+def useraccess_check_on_character_changed_user(sender, character, *args, **kwargs):
+    ua = UserAccess.objects.filter(character=character)
+    logger.debug("Received character_changed_user signal from character %s - checking %s useraccess models." % (character, len(us)))
+    for u in ua:
+        if u.user != character.user:
+            logger.info("Character %s new user does not match useraccess %s - deleting." % (character, u))
+            u.delete()
+    logger.debug("Assigning new access rights to character %s new owner %s" % (character, character.user))
+    assign_access.delay(character.user)
+
+@receiver(post_save, sender=UserAccess)
+def post_save_useraccess(sender, instance, *args, **kwargs):
+    logger.debug("Received post_save signal from useraccess %s" % instance)
+    if instance.user != instance.character.user:
+        logger.info("Useraccess %s character does not match useraccess user. Deleting" % instance)
+        instance.delete()
+    elif instance.content_type == ContentType.objects.get_for_model(CharacterAccessRule):
+        logger.debug("Useraccess applied based on characteraccess - verifying still applies to character.")
+        if instance.character != instance.access_rule.character:
+            logger.info("Useraccess %s character does not match characteraccess rule. Deleting" % instance)
+            instance.delete()
+    elif instance.content_type == ContentType.objects.get_for_model(CorpAccessRule):
+        logger.debug("Useraccess applied based on corpaccess - verifying still applies to character.")
+        if instance.acces_rule.corp.id != instance.character.corp_id:
+            logger.info("Useraccess %s character does not match corpaccess rule. Deleting" % instance)
+            instance.delete()
+    elif instance.content_type == ContentType.objects.get_for_model(AllianceAccessRule):
+        logger.debug("Useraccess applied based on allianceaccess - verifying still applies to chracter.")
+        if instance.access_rule.alliance.id != instance.character.alliance_id:
+            logger.info("Useraccess %s character does not match allianceaccess rule. Deleting" % instance)
+            instance.delete()
