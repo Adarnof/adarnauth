@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 from django.db import models
 import logging
 import evelink
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.models import ContentType
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +18,7 @@ class EVECharacter(models.Model):
     faction_id = models.PositiveIntegerField(null=True)
     faction_name = models.CharField(max_length=254, null=True)
     user = models.ForeignKey('authentication.User', null=True)
+    standing = GenericRelation('eveonline.EVEStanding', null=True)
     def __unicode__(self):
         if self.name:
             return self.name.encode('utf-8')
@@ -61,6 +64,7 @@ class EVECorporation(models.Model):
     alliance_name = models.CharField(max_length=254, null=True)
     members = models.PositiveIntegerField(null=True)
     ticker = models.CharField(max_length=254, null=True)
+    standing = GenericRelation('eveonline.EVEStanding', null=True)
     def __unicode__(self):
         if self.name:
             return self.name.encode('utf-8')
@@ -89,6 +93,7 @@ class EVEAlliance(models.Model):
     id = models.PositiveIntegerField(primary_key=True)
     name = models.CharField(max_length=254, null=True)
     ticker = models.CharField(max_length=254, null=True)
+    standing = GenericRelation('eveonline.EVEStanding', null=True)
     def __unicode__(self):
         if self.name:
             return self.name.encode('utf-8')
@@ -105,16 +110,17 @@ class EVEApiKeyPair(models.Model):
         return 'API Key %s' % self.id
 
 class EVEStanding(models.Model):
-    id = models.PositiveIntegerField(primary_key=True)
-    name = models.CharField(max_length=254, null=True)
     standing = models.DecimalField(max_digits=3, decimal_places=1, null=True)
-    type = models.CharField(max_length=254, null=True)
+    object_id = models.PositiveIntegerField()
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    content_object = GenericForeignKey('content_type', 'object_id')
     source_api = models.ForeignKey(EVEApiKeyPair, on_delete=models.CASCADE)
     def __unicode__(self):
-        if name and type:
-            output = 'Standing level %s to %s %s' % (self.standing, self.type, self.name)
-            return output.encode('utf-8')
+        output = "%s standing towards %s" % (self.standing, self.content_object)
+        return output.encode('utf-8')
+    def assign_object(self, object):
+        if isinstance(object, EVECharacter) or isinstance(object, EVECorporation) or isinstance(object, EVEAlliance):
+            self.object_id = object.pk
+            self.content_object = object
         else:
-            logger.warn("Incomplete standing model for id %s - returning id as __unicode__" % self.id)
-            output = 'Standing to %s' % self.id
-            return output.encode('utf-8')
+            raise TypeError("Standing must be towards object of type EVECharacter, EVECorporation, EVEAlliance.")

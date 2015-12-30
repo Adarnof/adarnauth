@@ -7,16 +7,26 @@ from access.models import UserAccess, CharacterAccess, CorpAccess, AllianceAcces
 from eveonline.models import EVECorporation, EVEAlliance
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
+from django.contrib.auth.models import Permission
 
 logger = logging.getLogger(__name__)
 
 @shared_task
 def assess_access(user):
     logger.debug("Assess access rights for user %s" % user)
+    perm = Permission.objects.get(content_type=ContentType.objects.get_for_model(UserAccess), codename='site_access')
     if user.useraccess_set.all().exists():
-        logger.info("User %s retains access because existing access rules %s" % (user, user.useraccess_set.all()))
+        logger.debug("User %s gets access because existing access rules %s" % (user, user.useraccess_set.all()))
+        if not perm in user.user_permissions.all():
+            logger.info("Assigning access permission to user %s: %s" % (user, perm))
+            user.user_permissions.add(perm)
+            user.save(update_fields="user_permissions")
     else:
-        logger.info("User %s loses access because no existing access rules." % user)
+        logger.debug("User %s does not get access because no existing access rules." % user)
+        if perm in user.user_permissions.all():
+            logger.info("Removing access permission from user %s: %s" % (user, permission))
+            user.user_permissions.remove(perm)
+            user.save(update_fields="user_permissions")
 
 @shared_task
 def assign_access(user):
@@ -47,10 +57,11 @@ def assign_access(user):
                 ua.set_rule(aa)
                 ua.save()
     logger.info("Finished assigning access to user %s" % user)
+    assess_access(user)
 
 @shared_task
 def generate_useraccess_by_characteraccess(ca):
-    ct = ContentType.get_for_model(ca)
+    ct = ContentType.objects.get_for_model(ca)
     logger.debug("Assigning UserAccess by CharacterAccess rule %s" % ca)
     char = ca.character
     if char.user:
@@ -71,7 +82,7 @@ def generate_useraccess_by_characteraccess(ca):
 
 @shared_task
 def genereate_useraccess_by_corpaccess(ca):
-    ct = ContentType.get_for_model(ca)
+    ct = ContentType.objects.get_for_model(ca)
     logger.debug("Assigning UserAccess by CorpAccess rule %s" % ca)
     users = User.objects.all()
     for user in users:
@@ -101,7 +112,7 @@ def genereate_useraccess_by_corpaccess(ca):
 
 @shared_task
 def generate_useraccess_by_allianceaccess(aa):
-    ct = ContentType.get_for_model(aa)
+    ct = ContentType.objects.get_for_model(aa)
     logger.debug("Assigning UserAccess by AllianceAccess rule %s" % aa)
     users = User.objects.all()
     for user in users:
