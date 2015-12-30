@@ -13,7 +13,7 @@ class UserAccess(models.Model):
     access_rule = GenericForeignKey('content_type', 'object_id')
     character = models.ForeignKey(EVECharacter, on_delete=models.CASCADE)
     def __unicode__(self):
-        output = '%s access by rule %s applying to %s' % (self.user, self.content_object, self.character)
+        output = '%s access by rule %s applying to %s' % (self.user, self.access_rule, self.character)
         return output.encode('utf-8')
     class Meta:
         permissions = (("site_access", "User has access to site."),)
