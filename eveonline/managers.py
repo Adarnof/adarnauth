@@ -40,7 +40,7 @@ class EVEManager:
                 if char.update():
                     chars.append(char)
                 else:
-                    logger.error("Character creation failed for id %s - possible bad id" % id)
+                    logger.error("Character model population failed for id %s - possible bad id. Deleting." % id)
                     char.delete()
             else:
                 logger.warn("Attempting to create existing model for character id %s" % id)
@@ -75,19 +75,31 @@ class EVEManager:
             return EVECorporation.objects.get(id=corp_id)
         else:
             logger.debug("No corp model exists for id %s - triggering creation." % corp_id)
-            EVEManager.create_corps([corp_id])
-            logger.debug("Returning new corp model with id %s" % corp_id)
-            return EVECorporation.objects.get(id=corp_id)
+            corps = EVEManager.create_corps([corp_id])
+            if corps:
+                logger.debug("Returning new corp model with id %s" % corp_id)
+                return corps[0]
+            else:
+                logger.error("Unable to create corp with id %s - returning None" % corp_id)
+                return None            
 
     @staticmethod
     def create_corps(corp_ids):
+        corps = []
         for id in corp_ids:
             corp, created = EVECorporation.objects.get_or_create(id = id)
             if created:
                 logger.info("Created model for corp id %s" % id)
+                if corp.update():
+                    corps.append(corp)
+                else:
+                    logger.error("Corp model population failed for id %s - possible bad id. Deleting." % id)
+                    corp.delete()                    
             else:
                 logger.warn("Attempting to create existing model for corp id %s" % id)
-            corp.update()
+                corp.update()
+                corps.append(corp)
+        return corps
 
     @staticmethod
     def update_corps(corp_ids):

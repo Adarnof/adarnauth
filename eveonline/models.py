@@ -37,8 +37,14 @@ class EVECharacter(models.Model):
             else:
                 char_info = result[self.id]
         logger.debug("Retrieved affiliations for character id %s: %s" % (self.id, char_info))
+        if (not 'name' in char_info) or (not 'id' in char_info) or (not 'corp' in char_info):
+            logger.error("Passed char_info missing required fields for character id %s. Aborting update." % self.id)
+            return False
         if not char_info['name']:
             logger.error("Received empty response from evelink for character id %s - likely bad character id. Aborting update." % self.id)
+            return False
+        if self.id != char_info['id']:
+            logger.error("Received api result for different character id %s, refusing to update character id %s" % (char_info['id'], self.id))
             return False
         update_fields = []
         if self.name != char_info['name']:
@@ -109,6 +115,12 @@ class EVECorporation(models.Model):
             except:
                 logger.exception("Error occured retrieving corporation sheet for id %s - likely bad corp id. Aborting update." % self.id, exc_info=True)
                 return False
+        if (not 'name' in result) or (not 'alliance' in result) or (not 'members' in result) or (not 'ticker' in result):
+            logger.error("Passed corp result missing required fields for corp id %s. Aborting update." % self.id)
+            return False
+        if self.id != result['id']:
+            logger.error("Received api result for different corp id %s, refusing to update corp id %s" % (result['id'], self.id))
+            return False
         update_fields = []
         logger.debug("Got corporation sheet from api for corp id %s: name %s ticker %s members %s" % (result['id'], result['name'], result['ticker'], result['members']['current']))
         if self.name != result['name']:

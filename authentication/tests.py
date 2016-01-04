@@ -15,7 +15,7 @@ class UserTestCate(TestCase):
 
     def test_create_user_with_bad_char_id(self):
         #ensure failing to generate character
-        main_character_id = 99999999999
+        main_character_id = 534899860
         user = User.objects.create_user(main_character_id=main_character_id)
         #ensure user lacks characters
         self.assertEqual(user, None)
