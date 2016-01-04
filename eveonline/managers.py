@@ -117,7 +117,7 @@ class EVEManager:
                 return None
         if EVEAlliance.objects.filter(id=alliance_id).exists():
             logger.debug("Returning existing alliance model with id %s" % alliance_id)
-            return EVEAlliance.objects.get(alliance_id=alliance_id)
+            return EVEAlliance.objects.get(id=alliance_id)
         else:
             logger.debug("No alliance model exists for id %s - triggering creation." % alliance_id)
             EVEManager.create_alliances([alliance_id])

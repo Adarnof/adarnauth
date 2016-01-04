@@ -141,7 +141,7 @@ def generate_useraccess_by_allianceaccess(aa):
                     ua.delete()
                     break
         else:
-            alliance = ca.alliance
+            alliance = aa.alliance
             chars = user.get_characters()
             logger.debug("User %s does not have AllianceAccess rule %s applied." % (user, aa))
             for char in chars:
