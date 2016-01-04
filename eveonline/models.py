@@ -23,7 +23,7 @@ class EVECharacter(models.Model):
         if self.name:
             return self.name.encode('utf-8')
         else:
-            logger.warn("Character name missing in character model for id %s - returning id as __unicode__" % self.id)
+            logger.warn("Character name missing in character model for id %s - needs an update - returning id as __unicode__" % self.id)
             return str(self.id).encode('utf-8')
     def update(self):
         logger.debug("Initiating update for character model with id %s" % str(self.id))
@@ -93,7 +93,7 @@ class EVECorporation(models.Model):
         if self.name:
             return self.name.encode('utf-8')
         else:
-            logger.warn("Corp name missing in corp model for id %s - returning id as __unicode__" % self.id)
+            logger.warn("Corp name missing in corp model for id %s - needs an update - returning id as __unicode__" % self.id)
             return str(self.id).encode('utf-8')
     def update(self):
         logger.debug("Updating corp info for corp id %s" % self.id)
@@ -134,7 +134,7 @@ class EVEAlliance(models.Model):
         if self.name:
             return self.name.encode('utf-8')
         else:
-            logger.warn("Alliance name missing in alliance models for id %s - returning id as __unicode__" % self.id)
+            logger.warn("Alliance name missing in alliance models for id %s - needs an update - returning id as __unicode__" % self.id)
             return str(self.id).encode('utf-8')
 
 class EVEApiKeyPair(models.Model):
