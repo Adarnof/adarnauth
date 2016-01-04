@@ -236,17 +236,17 @@ def post_save_useraccess(sender, instance, *args, **kwargs):
         logger.info("Useraccess %s character does not match useraccess user. Deleting" % instance)
         instance.delete()
     elif instance.content_type == ContentType.objects.get_for_model(CharacterAccessRule):
-        logger.debug("Useraccess applied based on characteraccess - verifying still applies to character.")
+        logger.debug("Useraccess based on characteraccess - verifying still applies to character.")
         if instance.character != instance.access_rule.character:
             logger.info("Useraccess %s character does not match characteraccess rule. Deleting" % instance)
             instance.delete()
     elif instance.content_type == ContentType.objects.get_for_model(CorpAccessRule):
-        logger.debug("Useraccess applied based on corpaccess - verifying still applies to character.")
+        logger.debug("Useraccess based on corpaccess - verifying still applies to character.")
         if instance.access_rule.corp.id != instance.character.corp_id:
             logger.info("Useraccess %s character does not match corpaccess rule. Deleting" % instance)
             instance.delete()
     elif instance.content_type == ContentType.objects.get_for_model(AllianceAccessRule):
-        logger.debug("Useraccess applied based on allianceaccess - verifying still applies to chracter.")
+        logger.debug("Useraccess based on allianceaccess - verifying still applies to chracter.")
         if instance.access_rule.alliance.id != instance.character.alliance_id:
             logger.info("Useraccess %s character does not match allianceaccess rule. Deleting" % instance)
             instance.delete()
