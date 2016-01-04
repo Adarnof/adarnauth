@@ -22,19 +22,31 @@ class EVEManager:
             return EVECharacter.objects.get(id=character_id)
         else:
             logger.debug("No character model exists for id %s - triggering creation." % character_id)
-            EVEManager.create_characters([character_id])
-            logger.debug("Returning new character model with id %s" % character_id)
-            return EVECharacter.objects.get(id=character_id)
+            chars = EVEManager.create_characters([character_id])
+            if chars:
+                logger.debug("Returning new character model with id %s" % character_id)
+                return chars[0]
+            else:
+                logger.error("Unable to create character with id %s - returning None" % character_id)
+                return None
 
     @staticmethod
     def create_characters(character_ids):
+        chars = []
         for id in character_ids:
             char, created = EVECharacter.objects.get_or_create(id = id)
             if created:
                 logger.info("Created model for character id %s" % id)
+                if char.update():
+                    chars.append(char)
+                else:
+                    logger.error("Character creation failed for id %s - possible bad id" % id)
+                    char.delete()
             else:
                 logger.warn("Attempting to create existing model for character id %s" % id)
-            char.update()
+                char.update()
+                chars.append(char)
+        return chars
 
     @staticmethod
     def update_characters(character_ids):
@@ -42,13 +54,12 @@ class EVEManager:
             EVEManager.get_character_by_id(id).update()
 
     @staticmethod
-    def assign_character_user(character_id, user):
-        character = EVEManager.get_character_by_id(character_id)
+    def assign_character_user(character, user):
         if character.user:
             logger.warn("Reassigning character from user %s to %s" % (char.user, user))
         character.user = user
         character.save(update_fields=['user'])
-        logger.info("Assigned character id %s to user %s" % (character_id, user))
+        logger.info("Assigned character %s to user %s" % (character, user))
 
     @staticmethod
     def get_corp_by_id(corp_id):

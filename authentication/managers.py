@@ -21,8 +21,13 @@ class UserManager(BaseUserManager):
         else:
             user.set_unusable_password()
             logger.debug("Setting unusable password for user.")
+        char = EVEManager.get_character_by_id(main_character_id)
+        logger.debug("Got character model %s for main character id %s" % (char, main_character_id))
+        if not char:
+            logger.error("Unable to create user with main character id %s - possibly bad id." % main_character_id)
+            return None
         user.save()
-        EVEManager.assign_character_user(main_character_id, user)
+        EVEManager.assign_character_user(char, user)
         logger.debug("User created succesfully: %s" % str(user))
         return user
 
