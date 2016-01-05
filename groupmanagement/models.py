@@ -21,3 +21,6 @@ class ExtendedGroup(models.Model):
 
     def get_members(self):
         return User.objects.filter(groups__name__in=[self.name])
+
+    class Meta:
+        permissions = (("can_manage_groups", "Can own or administrate groups."),)
