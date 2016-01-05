@@ -4,3 +4,4 @@ adarnauth/settings.py
 eveonline/migrations/*
 authentication/migrations/*
 access/migrations/*
+groupmanagement/migrations/*

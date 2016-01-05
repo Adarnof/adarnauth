@@ -17,7 +17,7 @@ class EVECharacter(models.Model):
     alliance_name = models.CharField(max_length=254, null=True)
     faction_id = models.PositiveIntegerField(null=True)
     faction_name = models.CharField(max_length=254, null=True)
-    user = models.ForeignKey('authentication.User', null=True)
+    user = models.ForeignKey('authentication.User', null=True, on_delete=models.SET_NULL)
     standing = GenericRelation('eveonline.EVEStanding', null=True)
     def __unicode__(self):
         if self.name:
