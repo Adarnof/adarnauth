@@ -10,14 +10,14 @@ logger = logging.getLogger(__name__)
 
 class EVECharacter(models.Model):
     id = models.PositiveIntegerField(primary_key=True)
-    name = models.CharField(max_length=254)
-    corp_id = models.PositiveIntegerField(null=True)
-    corp_name = models.CharField(max_length=254, null=True)
-    alliance_id = models.PositiveIntegerField(null=True)
-    alliance_name = models.CharField(max_length=254, null=True)
-    faction_id = models.PositiveIntegerField(null=True)
-    faction_name = models.CharField(max_length=254, null=True)
-    user = models.ForeignKey('authentication.User', null=True, on_delete=models.SET_NULL)
+    name = models.CharField(max_length=254, blank=True)
+    corp_id = models.PositiveIntegerField(null=True, blank=True)
+    corp_name = models.CharField(max_length=254, null=True, blank=True)
+    alliance_id = models.PositiveIntegerField(null=True, blank=True)
+    alliance_name = models.CharField(max_length=254, null=True, blank=True)
+    faction_id = models.PositiveIntegerField(null=True, blank=True)
+    faction_name = models.CharField(max_length=254, null=True, blank=True)
+    user = models.ForeignKey('authentication.User', null=True, on_delete=models.SET_NULL, blank=True)
     standing = GenericRelation('eveonline.EVEStanding', null=True)
     def __unicode__(self):
         if self.name:
@@ -93,11 +93,11 @@ class EVECharacter(models.Model):
 
 class EVECorporation(models.Model):
     id = models.PositiveIntegerField(primary_key=True)
-    name = models.CharField(max_length=254, null=True)
-    alliance_id = models.PositiveIntegerField(null=True)
-    alliance_name = models.CharField(max_length=254, null=True)
-    members = models.PositiveIntegerField(null=True)
-    ticker = models.CharField(max_length=254, null=True)
+    name = models.CharField(max_length=254, null=True, blank=True)
+    alliance_id = models.PositiveIntegerField(null=True, blank=True)
+    alliance_name = models.CharField(max_length=254, null=True, blank=True)
+    members = models.PositiveIntegerField(null=True, blank=True)
+    ticker = models.CharField(max_length=254, null=True, blank=True)
     standing = GenericRelation('eveonline.EVEStanding', null=True)
     def __unicode__(self):
         if self.name:
@@ -145,8 +145,8 @@ class EVECorporation(models.Model):
 
 class EVEAlliance(models.Model):
     id = models.PositiveIntegerField(primary_key=True)
-    name = models.CharField(max_length=254, null=True)
-    ticker = models.CharField(max_length=254, null=True)
+    name = models.CharField(max_length=254, null=True, blank=True)
+    ticker = models.CharField(max_length=254, null=True, blank=True)
     standing = GenericRelation('eveonline.EVEStanding', null=True)
     def __unicode__(self):
         if self.name:
@@ -181,7 +181,7 @@ class EVEApiKeyPair(models.Model):
     id = models.PositiveIntegerField(primary_key=True)
     vcode = models.CharField(max_length=254)
     owner = models.ForeignKey('authentication.User', null=True)
-    is_valid = models.NullBooleanField()
+    is_valid = models.NullBooleanField(blank=True)
     def __unicode__(self):
         return 'API Key %s' % self.id
 
