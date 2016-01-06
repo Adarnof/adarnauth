@@ -25,15 +25,19 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name = 'user'
         verbose_name_plural = 'users'
 
+    @property
+    def main_character(self):
+        if self.characters.filter(id=self.main_character_id).exists():
+            return self.characters.get(id=self.main_character_id)
+        else:
+            return None
+
     def get_short_name(self):
         return str(self.main_character_id)
 
     def __unicode__(self):
-        if self.evecharacter_set.all().filter(id=self.main_character_id).exists():
-            return str(self.evecharacter_set.all().get(id=self.main_character_id)).encode('utf-8')
+        if self.main_character:
+            return str(self.main_character).encode('utf-8')
         else:
             logger.error("Missing character model for user with main character id %s, returning id as __unicode__." % self.main_character_id)
             return self.get_short_name().encode('utf-8')
-
-    def get_characters(self):
-        return self.evecharacter_set.all()

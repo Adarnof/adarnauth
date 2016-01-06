@@ -17,7 +17,7 @@ class EVECharacter(models.Model):
     alliance_name = models.CharField(max_length=254, null=True, blank=True)
     faction_id = models.PositiveIntegerField(null=True, blank=True)
     faction_name = models.CharField(max_length=254, null=True, blank=True)
-    user = models.ForeignKey('authentication.User', null=True, on_delete=models.SET_NULL, blank=True)
+    user = models.ForeignKey('authentication.User', null=True, on_delete=models.SET_NULL, blank=True, related_name='characters')
     standing = GenericRelation('eveonline.EVEStanding', null=True)
     def __unicode__(self):
         if self.name:
@@ -182,6 +182,7 @@ class EVEApiKeyPair(models.Model):
     vcode = models.CharField(max_length=254)
     owner = models.ForeignKey('authentication.User', null=True)
     is_valid = models.NullBooleanField(blank=True)
+    characters = models.ManyToManyField(EVECharacter, related_name ='apis')
     def __unicode__(self):
         return 'API Key %s' % self.id
 

@@ -34,7 +34,7 @@ def assess_access(user):
 @shared_task
 def assign_access(user):
     logger.debug("Assigning access for user %s" % user)
-    chars = user.get_characters()
+    chars = user.characters.all()
     for char in chars:
         logger.debug("Assigning acces for user %s based on character %s" % (user, char))
         if CharacterAccessRule.objects.filter(character=char).exists():
@@ -107,7 +107,7 @@ def generate_useraccess_by_corpaccess(ca):
                     break
         else:
             corp = ca.corp
-            chars = user.get_characters()
+            chars = user.characters.all()
             logger.debug("User %s does not have CorpAccess rule %s applied." % (user, ca))
             for char in chars:
                 logger.debug("Checking user's character %s to apply CorpAccess rule %s" % (char, ca))
@@ -142,7 +142,7 @@ def generate_useraccess_by_allianceaccess(aa):
                     break
         else:
             alliance = aa.alliance
-            chars = user.get_characters()
+            chars = user.characters.all()
             logger.debug("User %s does not have AllianceAccess rule %s applied." % (user, aa))
             for char in chars:
                 logger.debug("Checking user's character %s to apply AllianceAccess rule %s" % (char, aa))

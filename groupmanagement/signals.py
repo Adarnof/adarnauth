@@ -1,12 +1,27 @@
 from django.db.models.signals import post_delete, post_save
-from django.dispatch import receiver
-from .models import ExtendedGroup
+from django.dispatch import receiver, Signal
+from .models import ExtendedGroup, GroupApplication
 import logging
 from access.signals import user_loses_access
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import Permission
 
 logger = logging.getLogger(__name__)
+
+user_joins_group = Signal(providing_args=['user', 'group'])
+user_leaves_group = Signal(providing_args=['user', 'group'])
+
+@receiver(post_save, sender=GroupApplication)
+def post_save_groupapplication(sender, instance, update_fields=None, *args, **kwargs):
+    logger.debug("Received post_save signal from groupapplication %s " % instance)
+    if update_fields:
+        if 'response' in update_fields:
+            if instance.response == None:
+                pass
+            elif instance.response:
+                logger.info("%s accepted. Adding user to group." % instance)
+                instance.user.groups.add(instance.group)
+                user_joins_group.send(sender=GroupApplication, user=instance.user, group=instance.group)
 
 @receiver(post_save, sender=ExtendedGroup)
 def post_save_extendedgroup(sender, instance, *args, **kwargs):
