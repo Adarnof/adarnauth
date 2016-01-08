@@ -1,0 +1,7 @@
+# ignore all
+*
+
+# keep these
+!registered
+!public
+!.gitignore

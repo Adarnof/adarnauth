@@ -1,0 +1,8 @@
+# ignore all
+*
+
+# keep these
+!.gitignore
+!README.md
+!templates
+!static

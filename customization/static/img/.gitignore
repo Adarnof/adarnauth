@@ -1,0 +1,6 @@
+# ignore all
+*
+
+# keep this
+!.gitignore
+

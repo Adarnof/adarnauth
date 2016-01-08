@@ -1,0 +1,9 @@
+# ignore all
+*
+
+# keep these
+!css
+!js
+!img
+!fonts
+!.gitignore
