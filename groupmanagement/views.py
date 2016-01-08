@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import Group
+from authentication.models import User
 from .forms import GroupAddForm, GroupEditForm, GroupTransferForm
 from .models import GroupApplication, ExtendedGroup
 from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
@@ -140,7 +141,7 @@ def group_create(request):
 
 @login_required
 @permission_required('access.site_access')
-@permission_required('groupmanagement.can_manage_group')
+@permission_required('groupmanagement.can_manage_groups')
 @permission_required('groupmanagement.delete_extendedgroup')
 def group_delete(request, group_id):
     logger.debug("group_delete called by user %s for group id %s" % (request.user, group_id))
@@ -154,7 +155,7 @@ def group_delete(request, group_id):
 
 @login_required
 @permission_required('access.site_access')
-@permission_required('groupmanagement.can_manage_group')
+@permission_required('groupmanagement.can_manage_groups')
 def group_manage(request, group_id):
     logger.debug("group_manage called by user %s for group id %s" % (request.user, group_id))
     exgroup = get_object_or_404(ExtendedGroup, id=group_id)
@@ -163,29 +164,40 @@ def group_manage(request, group_id):
         members = []
         for u in all_users:
             can_admin = False
-            if u.has_perm('groupmanagement.can_manage_group') and request.user == exgroup.owner:
+            if u.has_perm('groupmanagement.can_manage_groups') and request.user == exgroup.owner:
                 can_admin = True
             members.append((u, can_admin))
-        apps = GroupApplication.objects.filter(extended_group=exgroup)
+        apps = GroupApplication.objects.filter(extended_group=exgroup).filter(response=None)
+        all_admins = list(exgroup.admins.all())
+        admins = []
+        for a in all_admins:
+            if request.user == exgroup.owner:
+                admins.append((a, True))
+            elif request.user == a:
+                admins.append((a, True))
+            else:
+                admins.append((a, False))
         context = {
             'group': exgroup,
             'members': members,
+            'admins': admins,
             'applications': apps,
         }
         return render(request, 'registered/groupmanagement/manage.html', context=context)
     else:
         logger.warn("User %s not eligible to manage group %s" % (request.user, exgroup))
+        return redirect('groupmanagement_group_list')
     return render(request, 'registered/groupmanagement/manage.html', context=context)
 
 @login_required
 @permission_required('access.site_access')
-@permission_required('groupmanagement.can_manage_group')
+@permission_required('groupmanagement.can_manage_groups')
 def group_promote_member(request, group_id, user_id):
     logger.debug("group_promote_member called by user %s for group id %s user id %s" % (request.user, group_id, user_id))
     exgroup = get_object_or_404(ExtendedGroup, id=group_id)
     member = get_object_or_404(User, pk=user_id)
     if exgroup.owner == request.user:
-        if member in exgroup.admins.all() is False:
+        if member not in exgroup.admins.all():
             logger.info("User %s promoting %s to group %s admin" % (request.user, member, exgroup))
             exgroup.admins.add(member)
         else:
@@ -196,14 +208,15 @@ def group_promote_member(request, group_id, user_id):
 
 @login_required
 @permission_required('access.site_access')
-@permission_required('groupmanagement.can_manage_group')
+@permission_required('groupmanagement.can_manage_groups')
 def group_demote_admin(request, group_id, user_id):
     logger.debug("group_demote_admin called by user %s for group id %s user id %s" % (request.user, group_id, user_id))
     exgroup = get_object_or_404(ExtendedGroup, id=group_id)
-    admin = get_object_or_404(User, id=user_id)
-    if exgroup.owner == request.user:
+    admin = get_object_or_404(User, pk=user_id)
+    if exgroup.owner == request.user or request.user == admin:
         if admin in exgroup.admins.all():
             logger.info("User %s demoting admin %s in group %s" % (request.user, admin, exgroup))
+            exgroup.admins.remove(admin)
         else:
             logger.warn("User %s cannot demote %s in group %s: not admin" % (request.user, admin, exgroup))
     else:
@@ -212,7 +225,7 @@ def group_demote_admin(request, group_id, user_id):
 
 @login_required
 @permission_required('access.site_access')
-@permission_required('groupmanagement.can_manage_group')
+@permission_required('groupmanagement.can_manage_groups')
 @permission_required('groupmanagement.change_extendedgroup')
 def group_edit(request, group_id):
     logger.debug("group_edit called by user %s for group id %s" % (request.user, group_id))
@@ -260,7 +273,7 @@ def group_edit(request, group_id):
 
 @login_required
 @permission_required('access.site_access')
-@permission_required('groupmanagement.can_manage_group')
+@permission_required('groupmanagement.can_manage_groups')
 @permission_required('groupmanagement.change_extendedgroup')
 def group_transfer_ownership(request, group_id):
     logger.debug("group_transfer_ownership called by user %s for group id %s" % (request.user, group_id))
@@ -284,13 +297,13 @@ def group_transfer_ownership(request, group_id):
 
 @login_required
 @permission_required('access.site_access')
-@permission_required('groupmanagement.can_manage_group')
+@permission_required('groupmanagement.can_manage_groups')
 def group_remove_member(request, group_id, user_id):
     logger.debug("group_remove_member called by user %s for group id %s user id %s" % (request.user, group_id, user_id))
     exgroup = get_object_or_404(ExtendedGroup, id=group_id)
-    member = get_object_or_404(ExtendedGroup, id=group_id)
+    member = get_object_or_404(User, pk=user_id)
     if exgroup.owner == request.user or request.user in exgroup.admins.all():
-        if member in exgroup.group.user_set.all():
+        if exgroup.group in member.groups.all():
             if member != exgroup.owner and member not in exgroup.admins.all():
                 logger.info("User %s removing member %s from group %s" % (request.user, member, exgroup))
                 member.groups.remove(exgroup.group)

@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block title %}Manage Group{% endblock %}
+
+{% block content %}
+    <div class="col-lg-12">
+        <h1 class="page-header text-center">{{ group.name }}</h1>
+        <div class="panel panel-primary">
+        <div class="panel-heading">Group Information</div>
+        <table class="table">
+            <tr>
+                <th class="text-center">Name</th>
+                <th class="text-center">Description</th>
+                <th class="text-center">Owner</th>
+                <th class="text-center">Require Application</th>
+                <th class="text-center">Hidden</th>
+                <th class="text-center">Parent</th>
+            </tr>
+            <tr>
+                <td class="text-center">{{ group.name }}</td>
+                <td class="text-center">{{ group.description }}</td>
+                <td class="text-center">{{ group.owner }}</td>
+                <td class="text-center">{{ group.require_application }}</td>
+                <td class="text-center">{{ group.hidden }}</td>
+                <td class="text-center">
+                {% if group.parent %}
+                    <a href="{% url 'groupmanagement_group_manage' group.parent.id %}">{{ group.parent }}</a>
+                {% endif %}
+                </td>
+            </tr>
+        </table>
+        </div>
+        {% if applications %}
+            <div class="panel panel-warning">
+            <div class="panel-heading">Applications</div>
+            <table class="table">
+                <tr>
+                    <th class="text-center">Date</th>
+                    <th class="text-center">User<th>
+                    <th class="text-center">Corp</th>
+                    <th class="text-center">Alliance</th>
+                    <th class="text-center">Action</th>
+                </tr>
+                {% for app in applications %}
+                    <tr>
+                        <td class="text-center">{{ app.created }}</td>
+                        <td class="text-center">{{ app.user }}</td>
+                        <td class="text-center">{{ app.user.main_character.corp_name }}</td>
+                        <td class="text-center">{{ app.user.main_character.alliance_name }}</td>
+                        <td class="text-center">
+                            <a href="{% url 'groupmanagement_group_application_accept' app.id %}">
+                                <button type="button" class="btn btn-success" title="Accept">
+                                    <span class="glyphicon glyphicon-success"></span>
+                                </button>
+                            </a>
+                            <a href="%{ url 'groupmanagement_group_application_reject' app.id %}">
+                                <button type="button" class="btn btn-danger" title="Reject">
+                                     <span class="glyphicon glyphicon-remove"></span>
+                                </button>
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+            </div>
+        {% endif %}
+        {% if admins %}
+            <div class="panel panel-danger">
+            <div class="panel-heading">Admins</div>
+            <table class="table">
+                <tr>
+                    <th class="text-center">User</th>
+                    <th class="text-center">Action</th>
+                </tr>
+                {% for admin in admins %}
+                    <tr>
+                        <td class="text-center">{{ admin.0 }}</td>
+                        <td class="text-center">
+                            {% if admin.1 %}
+                                <a href="{% url 'groupmanagement_group_demote_admin' group.id admin.0.pk %}">
+                                    <button type="button" class="btn btn-danger">
+                                        <span class="glyphicon glyphicon-chevron-down"></span>
+                                    </button>
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+            </div>
+        {% endif %}
+        {% if members %}
+            <div class="panel panel-success">
+            <div class="panel-heading">Members</div>
+            <table class="table">
+                <tr>
+                    <th class="text-center">User</th>
+                    <th class="text-center">Corp</th>
+                    <th class="text-center">Alliance</th>
+                    <th class="text-center">Action</th>
+                </tr>
+                {% for member in members %}
+                    <tr>
+                        <td class="text-center">{{ member.0 }}</td>
+                        <td class="text-center">{{ member.0.main_character.corp_name }}</td>
+                        <td class="text-center">{{ member.0.main_character.alliance_name }}</td>
+                        <td class="text-center">
+                            {% if member.1 %}
+                                <a href="{% url 'groupmanagement_group_promote_member' group.id member.0.pk %}">
+                                    <button type="button" class="btn btn-success" title="Promote">
+                                        <span class="glyphicon glyphicon-chevron-up"></span>
+                                    </button>
+                                </a>
+                            {% endif %}
+                            <a href="{% url 'groupmanagement_group_remove_member' group.id member.0.pk %}">
+                                <button type="button" class="btn btn-danger" title="Kick">
+                                    <span class="glyphicon glyphicon-remove"></span>
+                                </button>
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
