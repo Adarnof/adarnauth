@@ -37,9 +37,10 @@ def group_list(request):
         if g.hidden:
             logger.debug("Removing %s as is hidden." % g)
             available.remove(g)
-        elif not g.parent in user_groups:
-            logger.debug("Removing %s as user lacks parent." % g)
-            available.remove(g)
+        elif g.parent:
+            if g.parent not in user_groups:
+                logger.debug("Removing %s as user lacks parent." % g)
+                available.remove(g)
     logger.debug("Collected %s owned %s admin %s member %s available %s applied groups for user %s" % (len(owned), len(admin), len(member), len(available), len(applied), request.user))
     context = {
         'owned': owned,
@@ -55,13 +56,16 @@ def group_list(request):
 def group_application_create(request, group_id):
     logger.debug("group_application_create called by user %s for group_id %s" % (request.user, group_id))
     exgroup = get_object_or_404(ExtendedGroup, id=group_id)
-    if GroupApplication.objects.filter(user=request.user).filter(extended_group=exgroup).exists() is False:
+    if GroupApplication.objects.filter(user=request.user).filter(extended_group=exgroup).filter(response=None).exists() is False:
         app = GroupApplication(user=request.user, extended_group=exgroup)
         app.save()
         logger.info("Created %s" % app)
+        if app.extended_group.require_application is not True:
+            logger.info("Auto-accepting %s as group %s does not require application approval." % (app, app.extended_group))
+            app.accept()
     else:
         logger.warn("User %s attempted to duplicate %s" % (request.user, GroupApplication.objects.filter(user=request.user).filter(extended_group=exgroup)[0]))
-    return redirect('groupmanagement.views.group_list_view')
+    return redirect('groupmanagement_group_list')
 
 @login_required
 @permission_required('access.site_access')
@@ -74,7 +78,7 @@ def group_application_accept(request, app_id):
         app.accept()
     else:
         logger.warn("User %s not eligible to accept %s" % (request.user, app))
-    return redirect('groupmanagement.views.group_manage', group_id = app.extended_group.id)
+    return redirect('groupmanagement_group_manage', app.extended_group.id)
 
 @login_required
 @permission_required('access.site_access')
@@ -87,7 +91,19 @@ def group_application_reject(request, app_id):
         app.reject()
     else:
         logger.warn("User %s not eligible to reject %s" % (request.user, app))
-    return redirect('groupmanagement.views.group_manage', group_id = app.extended_group.id)
+    return redirect('group_manage', group_id = app.extended_group.id)
+
+@login_required
+@permission_required('access.site_access')
+def group_application_delete(request, app_id):
+    logger.debug("group_application_delete called by user %s for app_id %s" % (request.user, app_id))
+    app = get_object_or_404(GroupApplication, id=app_id)
+    if app.user == request.user:
+        logger.info("User %s deleting %s" % (request.user, app))
+        app.delete()
+    else:
+        logger.warn("User %s not eligible to delete %s" % (request.user, app))
+    return redirect('groupmanagement_group_list')
 
 @login_required
 @permission_required('access.site_access')
@@ -134,7 +150,7 @@ def group_delete(request, group_id):
         exgroup.delete()
     else:
         logger.warn("User %s not eligible to delete group %s" % (request.user, exgroup))
-    return redirect('groupmanagement.views.group_list')
+    return redirect('groupmanagement_group_list')
 
 @login_required
 @permission_required('access.site_access')
@@ -176,7 +192,7 @@ def group_promote_member(request, group_id, user_id):
             logger.warn("User %s cannot promote %s in group %s: already admin" % (request.user, member, exgroup))
     else:
         logger.warn("User %s not eligible to promote %s in group %s" % (request.user, member, exgroup))
-    return redirect('groupmanagement.views.group_manage', group_id=group_id)
+    return redirect('groupmanagement_group_manage', group_id)
 
 @login_required
 @permission_required('access.site_access')
@@ -192,7 +208,7 @@ def group_demote_admin(request, group_id, user_id):
             logger.warn("User %s cannot demote %s in group %s: not admin" % (request.user, admin, exgroup))
     else:
         logger.warn("User %s not eligible to demote %s in group %s" % (request.user, admin, exgroup))
-    return redirect('groupmanagement.views.group_manage', group_id=group_id)
+    return redirect('groupmanagement_group_manage', group_id)
 
 @login_required
 @permission_required('access.site_access')
@@ -240,7 +256,7 @@ def group_edit(request, group_id):
         return render(request, 'registered/groupmanagement/edit.html', context={'form':form})
     else:
         logger.warn("User %s not eligible to edit group %s" % (request.user, exgroup))
-        return redirect('groupmanagement.views.group_list')
+        return redirect('groupmanagement_group_list')
 
 @login_required
 @permission_required('access.site_access')
@@ -264,4 +280,39 @@ def group_transfer_ownership(request, group_id):
         return render(request, 'registered/groupmanagement/transfer.html', context={'form':form})
     else:
         logger.warn("User %s not eligible to transfer ownership of %s" % (request.user, exgroup))
-        return redirect('groupmanagement.views.group_manage', group_id=group_id)
+        return redirect('groupmanagement_group_manage', group_id)
+
+@login_required
+@permission_required('access.site_access')
+@permission_required('groupmanagement.can_manage_group')
+def group_remove_member(request, group_id, user_id):
+    logger.debug("group_remove_member called by user %s for group id %s user id %s" % (request.user, group_id, user_id))
+    exgroup = get_object_or_404(ExtendedGroup, id=group_id)
+    member = get_object_or_404(ExtendedGroup, id=group_id)
+    if exgroup.owner == request.user or request.user in exgroup.admins.all():
+        if member in exgroup.group.user_set.all():
+            if member != exgroup.owner and member not in exgroup.admins.all():
+                logger.info("User %s removing member %s from group %s" % (request.user, member, exgroup))
+                member.groups.remove(exgroup.group)
+            else:
+                logger.warn("User %s failed to remove member %s from group %s - member is management." % (request.user, member, exgroup))
+        else:
+            logger.warn("User %s failed to remove member %s from group %s - member not in group." % (request.user, member, exgroup))
+    else:
+        logger.warn("User %s not eligible to remove member %s from group %s" % (request.user, member, exgroup))
+    return redirect('groupmanagement_group_manage', group_id)
+
+@login_required
+@permission_required('access.site_access')
+def group_leave(request, group_id):
+    logger.debug("group_leave called by user %s for group id %s" % (request.user, group_id))
+    exgroup = get_object_or_404(ExtendedGroup, id=group_id)
+    if exgroup.owner != request.user and request.user not in exgroup.admins.all():
+        if exgroup.group in request.user.groups.all():
+            logger.info("User %s leaving group %s" % (request.user, exgroup))
+            request.user.groups.remove(exgroup.group)
+        else:
+            logger.warn("User %s unable to leave group %s - not a member." % (request.user, exgroup))
+    else:
+        logger.warn("User %s unable to leave group %s - is management." % (request.user, exgroup))
+    return redirect('groupmanagement_group_list')

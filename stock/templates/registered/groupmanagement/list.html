@@ -41,13 +41,13 @@
                             {% endif %}
                         </td>
                         <td class="text-center">
-                            <a href="/groups/{{ g.id }}/"><button type="button" class="btn btn-primary" title="Manage Members"><span class="glyphicon glyphicon-user"></span></button></a>
+                            <a href="{% url 'groupmanagement_group_manage' g.id %}"><button type="button" class="btn btn-primary" title="Manage Members"><span class="glyphicon glyphicon-user"></span></button></a>
                             {% if perms.groupmanagement.change_extendedgroup %}
-                                <a href="/groups/{{ g.id }}/edit/"><button type="button" class="btn btn-success" title="Edit"><span class="glyphicon glyphicon-pencil"></span></button></a>
+                                <a href="{% url 'groupmanagement_group_edit' g.id %}"><button type="button" class="btn btn-success" title="Edit"><span class="glyphicon glyphicon-pencil"></span></button></a>
                             {% endif %}
-                            <button type="button" class="btn btn-warning" title="Transfer Ownership"><span class="glyphicon glyphicon-share-alt"></span></button>
+                            <a href="{% url 'groupmanagement_group_transfer_ownership' g.id %}"><button type="button" class="btn btn-warning" title="Transfer Ownership"><span class="glyphicon glyphicon-share-alt"></span></button></a>
                             {% if perms.groupmanagement.delete_extendedgroup %}
-                                <button type="button" class="btn btn-danger" title="Delete"><span class="glyphicon glyphicon-trash"></span></button>
+                                <a href="{% url 'groupmanagement_group_delete' g.id %}"><button type="button" class="btn btn-danger" title="Delete"><span class="glyphicon glyphicon-trash"></span></button></a>
                             {% endif %}
                         </td>
                     </tr>
@@ -87,7 +87,9 @@
                             {% endif %}
                         </td>
                         <td class="text-center">
-                            <button type="button" class="btn btn-primary" title="Manage Members"><span class="glyphicon glyphicon-user"><span></button>
+                            <a href="{% url 'groupmanagement_group_manage' g.id %}">
+                                <button type="button" class="btn btn-primary" title="Manage Members"><span class="glyphicon glyphicon-user"><span></button>
+                            </a>
                         </td>
                     </tr>
                 {% endfor %}
@@ -116,7 +118,9 @@
                             {% endif %}
                         </td>
                         <td class="text-center">
-                            <button type="button" class="btn btn-danger" title="Leave"><span class="glyphicon glyphicon-remove"><span></button>
+                            <a href="{% url 'groupmanagement_group_leave' g.id %}">
+                                <button type="button" class="btn btn-danger" title="Leave"><span class="glyphicon glyphicon-remove"><span></button>
+                            </a>
                         </td>
                     </tr>
                  {% endfor %}
@@ -138,7 +142,11 @@
                         <td class="text-center">{{ a.created }}</td>
                         <td class="text-center">{{ a.extended_group.name }}</td>
                         <td class="text-center">{{ a.extended_group.description }}</td>
-                        <td class="text-center"><button type="button" class="btn btn-danger" title="Cancel"><span class="glyphicon glyphicon-remove"><span></button></td>
+                        <td class="text-center">
+                            <a href="{% url 'groupmanagement_group_application_delete' a.id %}">
+                                <button type="button" class="btn btn-danger" title="Cancel"><span class="glyphicon glyphicon-remove"><span></button>
+                            </a>
+                        </td>
                     </tr>
                  {% endfor %}
             </table>
@@ -158,11 +166,13 @@
                         <td class="text-center">{{ g.name }}</td>
                         <td class="text-center">{{ g.description }}</td>
                         <td class="text-center">
+                            <a href="{% url 'groupmanagement_group_application_create' g.id %}">
                             {% if g.require_application %}
                                 <button type="button" class="btn btn-warning" title="Apply"><span class="glyphicon glyphicon-plus"></span></button>
                             {% else %}
                                 <button type="button" class="btn btn-success" title="Join"><span class="glyphicon glyphicon-ok"></span></button>
                             {% endif %}
+                            </a>
                         </td>
                     </tr>
                  {% endfor %}
