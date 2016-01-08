@@ -37,7 +37,7 @@ def group_list(request):
 def group_application_create(request, group_id):
     logger.debug("group_application_create called by user %s for group_id %s" % (request.user, group_id))
     exgroup = get_object_or_404(ExtendedGroup, id=group_id)
-    if not GroupApplication.objects.filter(user=request.user).filter(extended_group=exgroup).exists():
+    if GroupApplication.objects.filter(user=request.user).filter(extended_group=exgroup).exists() is False:
         app = GroupApplication(user=request.user, extended_group=exgroup)
         app.save()
         logger.info("Created %s" % app)
@@ -84,21 +84,20 @@ def group_create(request):
             name = form.cleaned_data['name']
             desc = form.cleaned_data['description']
             hidden = form.cleaned_data['hidden']
-            parent_str = form.cleaned_data['parent']
+            parent = form.cleaned_data['parent']
             app = form.cleaned_data['applications']
-            if parent_str:
-                parent = get_object_or_404(ExtendedGroup, name=parent_str)
-            else:
-                parent = None
-            logger.debug("Proceeding with creation of group %s with parent: %s" % (name, parent))
             group, c = Group.objects.get_or_create(name=name)
-            if not c:
-                logger.warn("Associating orphaned group %s with new extended group created by %s" % (group, request.user))
+            if c is False:
+                if ExtendedGroup.objects.filter(group=group).exists() is False:
+                    logger.warn("Associating orphaned group %s with new extended group created by %s" % (group, request.user))
+                else:
+                    logger.error("User %s attempting to create duplicate ExtendedGroup for %s" % (request.user, group))
+                    return redirect('groupmanagement.views.group_list')
             e = ExtendedGroup(group=group, owner=request.user, description=desc, hidden=hidden, parent=parent, require_application=app)
             e.save()
             logger.info("User %s created group %s" % (request.user, e))
     else:
-        form = GroupAddForm()
+        form = GroupAddForm(user=request.user)
     return render(request, 'registered/groupmanagemement/create.html', context={'form':form})
 
 @login_required
@@ -148,7 +147,7 @@ def group_promote_member(request, group_id, user_id):
     exgroup = get_object_or_404(ExtendedGroup, id=group_id)
     member = get_object_or_404(User, pk=user_id)
     if exgroup.owner == request.user:
-        if not member in exgroup.admins.all():
+        if member in exgroup.admins.all() is False:
             logger.info("User %s promoting %s to group %s admin" % (request.user, member, exgroup))
             exgroup.admins.add(member)
         else:
@@ -188,11 +187,7 @@ def group_edit(request, group_id):
                 desc = form.cleaned_data['desc']
                 hidden = form.cleaned_data['hidden']
                 app = form.cleaned_data['applications']
-                parent_str = form.cleaned_data['parent']
-                if parent_str:
-                    parent = get_object_or_404(ExtendedGroup, name=parent_str)
-                else:
-                    parent = None
+                parent = form.cleaned_data['parent']
                 update_fields=[]
                 if exgroup.description != desc:
                     exgroup.description = desc
@@ -211,8 +206,15 @@ def group_edit(request, group_id):
                     exgroup.save()
                 else:
                     logger.debug("Detected no changes between group %s and supplied form." % exgroup)
+                return redirect('groupmanagement.views.group_list')
         else:
-            form = GroupEditForm()
+            data = {
+                'description': exgroup.description,
+                'hidden': exgroup.hidden,
+                'parent': exgroup.parent,
+                'applications': exgroup.require_application,
+            }
+            form = GroupEditForm(user=request.user, initial=data)
         return render(request, 'registered/groupmanagement/edit.html', context={'form':form})
     else:
         logger.warn("User %s not eligible to edit group %s" % (request.user, exgroup))
@@ -230,13 +232,13 @@ def group_transfer_ownership(request, group_id):
             form = GroupTransferForm(request.POST)
             logger.debug("Request type POST, contains for, is valid: %s" % form.is_valid())
             if form.is_valid():
-                admin_id = int(form.cleaned_data['owner'])        
-                admin = get_object_or_404(User, pk=admin_id)
+                admin = form.cleaned_data['owner']
                 exgroup.owner = admin
                 logger.info("User %s transferring ownership of group %s to %s" % (request.user, exgroup, admin))
                 exgroup.save(update_fields=['owner'])
+                return redirect('groupmanagement.views.group_list')
         else:
-            form = GroupTransferForm()
+            form = GroupTransferForm(exgroup)
         return render(request, 'registered/groupmanagement/transfer.html', context={'form':form})
     else:
         logger.warn("User %s not eligible to transfer ownership of %s" % (request.user, exgroup))
