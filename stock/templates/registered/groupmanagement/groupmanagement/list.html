@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block title %}Groups{% endblock %}
+
+{% block content %}
+    <div class="col-lg-12">
+        <h1 class="page-header text-center">Groups</h1>
+        {% if perms.groupmanagement.can_manage_groups and perms.groupmanagement.add_extendedgroup %}
+            <div class="text-right">
+                <a href="{% url 'groupmanagement_group_create' %}"><button type="button" class="btn btn-success" title="Add Group"><span class="glyphicon glyphicon-plus"></span></button></a>
+            </div>
+        {% endif %}
+        {% if owned %}
+            <div class="panel panel-default">
+            <div class="panel-heading">Owned Groups</div>
+            <table class="table table-bordered">
+                <tr>
+                    <th class="text-center">Name</th>
+                    <th class="text-center">Description</th>
+                    <th class="text-center">Applications</th>
+                    <th class="text-center">Visibility</th>
+                    <th class="text-center">Action</th>
+                </tr>
+                {% for g in owned %}
+                    <tr>
+                        <td class="text-center">{{ g.name }}</td>
+                        <td class="text-center">{{ g.description }}</td>
+                        <td class="text-center">
+                            {% if g.require_application %}
+                                <span class="glyphicon glyphicon-thumbs-up"></span>
+                            {% else %}
+                                <span class="glyphicon glyphicon-thumbs-down"></span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if g.hidden %}
+                                <span class="glyphicon glyphicon-eye-close"></span>
+                            {% else %}
+                                <span class="glyphicon glyphicon-eye-open"></span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <a href="/groups/{{ g.id }}/"><button type="button" class="btn btn-primary" title="Manage Members"><span class="glyphicon glyphicon-user"></span></button></a>
+                            {% if perms.groupmanagement.change_extendedgroup %}
+                                <a href="/groups/{{ g.id }}/edit/"><button type="button" class="btn btn-success" title="Edit"><span class="glyphicon glyphicon-pencil"></span></button></a>
+                            {% endif %}
+                            <button type="button" class="btn btn-warning" title="Transfer Ownership"><span class="glyphicon glyphicon-share-alt"></span></button>
+                            {% if perms.groupmanagement.delete_extendedgroup %}
+                                <button type="button" class="btn btn-danger" title="Delete"><span class="glyphicon glyphicon-trash"></span></button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                 {% endfor %}
+            </table>
+            </div>
+        {% endif %}
+        {% if admin %}
+            <div class="panel panel-default">
+            <div class="panel-heading">Managed Groups</div>
+            <table class="table table-bordered">
+                <tr>
+                    <th class="text-center">Name</th>
+                    <th class="text-center">Description</th>
+                    <th class="text-center">Owner</th>
+                    <th class="text-center">Applications</th>
+                    <th class="text-center">Visibility</th>
+                    <th class="text-center">Action</th>
+                </tr>
+                {% for g in admin %}
+                    <tr>
+                        <td class="text-center">{{ g.name }}</td>
+                        <td class="text-center">{{ g.description }}</td>
+                        <td class="text-center">{{ g.owner }}</td>
+                        <td class="text-center">
+                            {% if g.require_application %}
+                                <span class="glyphicon glyphicon-thumbs-up"></span>
+                            {% else %}
+                                <span class="glyphicon glyphicon-thumbs-down"></span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if g.hidden %}
+                                <span class="glyphicon glyphicon-eye-close"></span>
+                            {% else %}
+                                <span class="glyphicon glyphicon-eye-open"></span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-primary" title="Manage Members"><span class="glyphicon glyphicon-user"><span></button>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+            </div>
+        {% endif %}
+        {% if member %}
+            <div class="panel panel-default">
+            <div class="panel-heading">Your Groups</div>
+            <table class="table table-bordered">
+                <tr>
+                    <th class="text-center">Name</th>
+                    <th class="text-center">Description</th>
+                    <th class="text-center">Visibility</th>
+                    <th class="text-center">Action</th>
+                </tr>
+                {% for g in member %}
+                    <tr>
+                        <td class="text-center">{{ g.name }}</td>
+                        <td class="text-center">{{ g.description }}</td>
+                        <td class="text-center">
+                            {% if g.hidden %}
+                                <span class="glyphicon glyphicon-eye-close"></span>
+                            {% else %}
+                                <span class="glyphicon glyphicon-eye-open"></span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-danger" title="Leave"><span class="glyphicon glyphicon-remove"><span></button>
+                        </td>
+                    </tr>
+                 {% endfor %}
+             </table>
+             </div>
+        {% endif %}
+        {% if applications %}
+            <div class="panel panel-default">
+            <div class="panel-heading">Applications</div>
+            <table class="table table-bordered">
+                <tr>
+                    <th class="text-center">Date</th>
+                    <th class="text-center">Name</th>
+                    <th class="text-center">Description</th>
+                    <th class="text-center">Action</th>
+                </tr>
+                {% for a in applications %}
+                    <tr>
+                        <td class="text-center">{{ a.created }}</td>
+                        <td class="text-center">{{ a.extended_group.name }}</td>
+                        <td class="text-center">{{ a.extended_group.description }}</td>
+                        <td class="text-center"><button type="button" class="btn btn-danger" title="Cancel"><span class="glyphicon glyphicon-remove"><span></button></td>
+                    </tr>
+                 {% endfor %}
+            </table>
+            </div>
+        {% endif %}
+        {% if available %}
+            <div class="panel panel-default">
+            <div class="panel-heading">Available Groups</div>
+            <table class="table table-bordered">
+                <tr>
+                    <th class="text-center">Name</th>
+                    <th class="text-center">Description</th>
+                    <th class="text-center">Action</th>
+                </tr>
+                {% for g in available %}
+                    <tr>
+                        <td class="text-center">{{ g.name }}</td>
+                        <td class="text-center">{{ g.description }}</td>
+                        <td class="text-center">
+                            {% if g.require_application %}
+                                <button type="button" class="btn btn-warning" title="Apply"><span class="glyphicon glyphicon-plus"></span></button>
+                            {% else %}
+                                <button type="button" class="btn btn-success" title="Join"><span class="glyphicon glyphicon-ok"></span></button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                 {% endfor %}
+             </table>
+             </div>
+         {% endif %}
+    </div>
+{% endblock %}

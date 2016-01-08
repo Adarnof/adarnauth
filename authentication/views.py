@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponseRedirect
 import logging
 
@@ -29,4 +29,8 @@ def dashboard_view(request):
     return render(request, 'dashboard.html')
 
 def login_view(request):
+    return render(request, 'login.html')
+
+def logout_view(request):
+    logout(user)
     return render(request, 'login.html')

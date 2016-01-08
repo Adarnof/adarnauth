@@ -1,0 +1,3 @@
+django-bootstrap-form
+evelink
+celery

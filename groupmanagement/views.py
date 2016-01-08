@@ -3,32 +3,50 @@ from django.contrib.auth.models import User, Group
 from .forms import GroupAddForm, GroupEditForm, GroupTransferForm
 from .models import GroupApplication, ExtendedGroup
 from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
+import logging
+
+logger = logging.getLogger(__name__)
 
 @login_required
 @permission_required('useraccess.site_access')
 def group_list(request):
     logger.debug("group_list_view called by user %s" % request.user)
-    applications = GroupApplication.objects.get_open.filter(user=request.user)
+    applications = GroupApplication.objects.get_open().filter(user=request.user)
     applied = [a.extended_group for a in applications]
-    owned = user.owned_groups.all()
-    admin = user.admin_groups.all()
-    user_groups = ExtendedGroup.objecs.filter(group in request.user.groups.all())
-    all_groups = ExtendedGroup.objects.all() - user_groups - applied
+    owned = list(request.user.owned_groups.all())
+    admin = list(request.user.admin_groups.all())
+    user_groups = []
+    for g in request.user.groups.all():
+        if ExtendedGroup.objects.filter(group=g).exists():
+            user_groups.append(ExtendedGroup.objects.get(group=g))
+    all_groups = [g for g in list(ExtendedGroup.objects.all()) if g not in user_groups and g not in applied]
+    logger.debug("User has groups %s" % user_groups)
+    member = list(user_groups)
+    for g in user_groups:
+        logger.debug("Checking %s" % g)
+        if g in owned:
+            logger.debug("Removing %s as is owned." % g)
+            member.remove(g)
+        elif g in admin:
+            logger.debug("Removing %s as is managed." % g)
+            member.remove(g)
+    logger.debug("Groups available: %s" % all_groups)
+    available = list(all_groups)
     for g in all_groups:
+        logger.debug("Checking %s" % g)
         if g.hidden:
-            all_groups.remove(g)
+            logger.debug("Removing %s as is hidden." % g)
+            available.remove(g)
         elif not g.parent in user_groups:
-            all_groups.remove(g)
-    for g in owned:
-        user_groups.remove(g)
-    for g in admin:
-        user_groups.remove(g)
-    logger.debug("Collected %s owned %s admin %s member %s available %s applied groups for user %s" % (len(owned), len(admin), len(user_groups), len(all_groups), len(applied), request.user))
+            logger.debug("Removing %s as user lacks parent." % g)
+            available.remove(g)
+    logger.debug("Collected %s owned %s admin %s member %s available %s applied groups for user %s" % (len(owned), len(admin), len(member), len(available), len(applied), request.user))
     context = {
         'owned': owned,
         'admin': admin,
-        'member': user_groups,
-        'available': all_groups,
+        'member': member,
+        'applications': applications,
+        'available': available,
     }
     return render(request, 'registered/groupmanagement/list.html', context=context)
 
@@ -76,16 +94,17 @@ def group_application_reject(request, app_id):
 @permission_required('groupmanagement.can_manage.groups')
 @permission_required('groupmanagement.add_extendedgroup')
 def group_create(request):
-    logger.debug("group_create called by user %s")
+    logger.debug("group_create called by user %s" % request.user)
     if request.method == 'POST':
         form = GroupAddForm(request.POST)
         logger.debug("Received POST request containing form, is valid: %s" % form.is_valid())
+        logger.debug(request.POST)
         if form.is_valid():
             name = form.cleaned_data['name']
             desc = form.cleaned_data['description']
-            hidden = form.cleaned_data['hidden']
-            parent = form.cleaned_data['parent']
-            app = form.cleaned_data['applications']
+            hidden_str = form.cleaned_data['hidden']
+            parent_str = form.cleaned_data['parent']
+            app_str = form.cleaned_data['applications']
             group, c = Group.objects.get_or_create(name=name)
             if c is False:
                 if ExtendedGroup.objects.filter(group=group).exists() is False:
@@ -96,9 +115,12 @@ def group_create(request):
             e = ExtendedGroup(group=group, owner=request.user, description=desc, hidden=hidden, parent=parent, require_application=app)
             e.save()
             logger.info("User %s created group %s" % (request.user, e))
+        else:
+            logger.debug("Field errors: %s" % str(form.errors))
+            logger.debug("Non-field errors: %s" % str(form.non_field_errors()))
     else:
         form = GroupAddForm(user=request.user)
-    return render(request, 'registered/groupmanagemement/create.html', context={'form':form})
+    return render(request, 'registered/groupmanagement/create.html', context={'form':form})
 
 @login_required
 @permission_required('access.site_access')
@@ -121,14 +143,14 @@ def group_manage(request, group_id):
     logger.debug("group_manage called by user %s for group id %s" % (request.user, group_id))
     exgroup = get_object_or_404(ExtendedGroup, id=group_id)
     if exgroup.owner == request.user or request.user in exgroup.admins.all():
-        all_users = exgroup.group.user_set.all() - [exgroup.owner] - exgroup.admins.all()
+        all_users = list(u for u in exgroup.group.user_set.all() if u != exgroup.owner and u not in list(exgroup.admins.all()))
         members = []
         for u in all_users:
             can_admin = False
             if u.has_perm('groupmanagement.can_manage_group') and request.user == exgroup.owner:
                 can_admin = True
             members.append((u, can_admin))
-        apps = GroupApplication.objects.filter(group=exgroup)
+        apps = GroupApplication.objects.filter(extended_group=exgroup)
         context = {
             'group': exgroup,
             'members': members,
