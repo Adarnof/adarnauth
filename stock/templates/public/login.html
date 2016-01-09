@@ -1,0 +1,17 @@
+{% extends "public/base.html" %}
+{% load staticfiles %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+    <div class="col-lg-12">
+    <h1 class="page-header text-center">Login</h1>
+    <div class="col-lg-12 container" id="example">
+        <div class="text-center">
+            <a href="https://login.eveonline.com/oauth/authorize/?response_type=code&redirect_uri={{ request.get_host }}/callback&client_id={{ sso_client_id }}&scope=&state=login">
+                <img class="img-responsive center-block" src="{% static 'img/sso/EVE_SSO_Login_Buttons_Large_Black.png' %}">
+            </a>
+        </div>
+    </div>
+    </div>
+{% endblock %}

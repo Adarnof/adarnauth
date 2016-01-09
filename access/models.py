@@ -16,7 +16,7 @@ class UserAccess(models.Model):
         output = '%s access by rule %s applying to %s' % (self.user, self.access_rule, self.character)
         return output.encode('utf-8')
     class Meta:
-        permissions = (("site_access", "User has access to site."),)
+        permissions = (("site_access", "User has access to site."), ("manage_access", "User can manage site access."),)
     def set_rule(self, object):
         if isinstance(object, CharacterAccessRule) or isinstance(object, CorpAccessRule) or isinstance(object, AllianceAccessRule) or isinstance(object, StandingAccessRule):
             self.object_id = object.pk

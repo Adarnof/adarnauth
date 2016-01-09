@@ -27,7 +27,6 @@
 </head>
 
 <body>
-{% if user.is_authenticated %}
     <div id="wrapper">
         <!-- Navigation -->
 
@@ -57,27 +56,31 @@
                         <li class="text-center divider-horizontal">
                             <h5>Main Navigation</h5>
                         </li>
-
-                        <li>
-                            <a class="active" href="{% url 'auth_dashboard' %}"><i
-                                    class="fa fa-dashboard fa-fw grayiconecolor"></i> Dashboard</a>
-                        </li>
-
-                        <li>
-                            <a {% if perms.access.site_access %} class="active" href="{% url 'groupmanagement_group_list' %}" {% else %} href="" {% endif %}>
-                                <i class="fa fa-cogs fa-sitemap grayiconecolor"></i> Groups</a>
-                        </li>
-                        <li class="text-center divider-horizontal">
-                            <h5>Access</h5>
-                        </li>
-                         <li>
-                            <a class="active" href="{% url 'access_list_useraccess' %}">
-                                <i class="fa fa-cogs fa-signal grayiconecolor"></i> Your Access</a>
-                        </li>
-                        <li>
-                            <a class="active" href="{% url 'access_list_access_rules' %}">
-                                <i class="fa fa-cogs fa-tasks grayiconecolor"></i> Access Rules</a>
-                        </li>
+                        {% if user.is_authenticated %}
+                            <li>
+                                <a class="active" href="{% url 'auth_dashboard' %}"><i
+                                        class="fa fa-dashboard fa-fw grayiconecolor"></i> Dashboard</a>
+                            </li>
+                            <li>
+                                <a class="active" href="{% url 'access_list_useraccess' %}">
+                                    <i class="fa fa-check-square grayiconecolor"></i> Access Summary</a>
+                            </li>
+                            <li>
+                                <a {% if perms.access.site_access %} class="active" href="{% url 'groupmanagement_group_list' %}" {% else %} href="" {% endif %}>
+                                    <i class="fa fa-group grayiconecolor"></i> Groups</a>
+                            </li>
+                            <li class="text-center divider-horizontal">
+                                <h5>Settings</h5>
+                            </li>
+                            <li>
+                                <a {% if perms.access.manage_access %} class="active" href="{% url 'access_list_access_rules' %}" {% else %} href="" {% endif %}>
+                                    <i class="fa fa-check-square grayiconecolor"></i> Access Rules</a>
+                            </li>
+                            <li>
+                                <a {% if perms.groupmanagement.can_manage_groups %} class="active" href="{% url 'groupmanagement_group_list_management' %}" {% else %} href="" {% endif %}>
+                                    <i class="fa fa-group grayiconecolor"></i> Group Management</a>
+                            </li>
+                        {% endif %}
                     </ul>
                 </div>
                 <!-- /.sidebar-collapse -->
@@ -89,7 +92,6 @@
             {% endblock content %}
         </div>
     </div>
-{% endif %}
 <script src="{% static 'js/jquery.min.js' %}"></script>
 <script src="{% static 'js/jquery.datetimepicker.js' %}"></script>
 <script src="{% static 'js/bootstrap.min.js' %}"></script>

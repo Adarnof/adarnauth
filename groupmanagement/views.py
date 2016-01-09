@@ -22,15 +22,14 @@ def group_list(request):
             user_groups.append(ExtendedGroup.objects.get(group=g))
     all_groups = [g for g in list(ExtendedGroup.objects.all()) if g not in user_groups and g not in applied]
     logger.debug("User has groups %s" % user_groups)
-    member = list(user_groups)
+    member = []
     for g in user_groups:
-        logger.debug("Checking %s" % g)
         if g in owned:
-            logger.debug("Removing %s as is owned." % g)
-            member.remove(g)
+            member.append((g, False))
         elif g in admin:
-            logger.debug("Removing %s as is managed." % g)
-            member.remove(g)
+            member.append((g, False))
+        else:
+            member.append((g, True))
     logger.debug("Groups available: %s" % all_groups)
     available = list(all_groups)
     for g in all_groups:
@@ -42,15 +41,25 @@ def group_list(request):
             if g.parent not in user_groups:
                 logger.debug("Removing %s as user lacks parent." % g)
                 available.remove(g)
-    logger.debug("Collected %s owned %s admin %s member %s available %s applied groups for user %s" % (len(owned), len(admin), len(member), len(available), len(applied), request.user))
+    logger.debug("Collected %s member %s available %s applied groups for user %s" % (len(member), len(available), len(applied), request.user))
     context = {
-        'owned': owned,
-        'admin': admin,
         'member': member,
         'applications': applications,
         'available': available,
     }
     return render(request, 'registered/groupmanagement/list.html', context=context)
+
+@login_required
+@permission_required('groupmanagement.can_manage_groups')
+def group_list_management(request):
+    logger.debug("group_list_management called by user %s" % request.user)
+    owned = list(request.user.owned_groups.all())
+    admin = list(request.user.admin_groups.all())
+    context = {
+        'owned': owned,
+        'admin': admin,
+    }
+    return render(request, 'registered/groupmanagement/list_management.html', context=context)
 
 @login_required
 @permission_required('access.site_access')
@@ -92,7 +101,7 @@ def group_application_reject(request, app_id):
         app.reject()
     else:
         logger.warn("User %s not eligible to reject %s" % (request.user, app))
-    return redirect('group_manage', group_id = app.extended_group.id)
+    return redirect('groupmanagement_group_manage', group_id = app.extended_group.id)
 
 @login_required
 @permission_required('access.site_access')
@@ -151,7 +160,7 @@ def group_delete(request, group_id):
         exgroup.delete()
     else:
         logger.warn("User %s not eligible to delete group %s" % (request.user, exgroup))
-    return redirect('groupmanagement_group_list')
+    return redirect('groupmanagement_group_list_management')
 
 @login_required
 @permission_required('access.site_access')
@@ -269,7 +278,7 @@ def group_edit(request, group_id):
         return render(request, 'registered/groupmanagement/edit.html', context={'form':form})
     else:
         logger.warn("User %s not eligible to edit group %s" % (request.user, exgroup))
-        return redirect('groupmanagement_group_list')
+        return redirect('groupmanagement_group_list_management')
 
 @login_required
 @permission_required('access.site_access')
@@ -287,7 +296,7 @@ def group_transfer_ownership(request, group_id):
                 exgroup.owner = admin
                 logger.info("User %s transferring ownership of group %s to %s" % (request.user, exgroup, admin))
                 exgroup.save(update_fields=['owner'])
-                return redirect('groupmanagement.views.group_list')
+                return redirect('groupmanagement_group_list_management')
         else:
             form = GroupTransferForm(exgroup)
         return render(request, 'registered/groupmanagement/transfer.html', context={'form':form})
