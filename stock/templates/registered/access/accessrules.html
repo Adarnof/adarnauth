@@ -8,18 +8,27 @@
         <h1 class="page-header text-center">Access Rules</h1>
         <div class="panel panel-success">
             <div class="panel-heading">Characters</div>
-            {% if perms.access.add_characteraccessrule %}
-                <div class="text-right">
-                    <a href="{% url 'access_characteraccess_create' %}"><button type="button" class="btn btn-success" title="Add"><span class="glyphicon glyphicon-plus"></span></button></a>
-                </div>
-            {% endif %}
             <table class="table">
+                    <tr>
+                        <th class="text-center">Name</th>
+                        {% if perms.access.add_characteraccessrule %}
+                            <td>
+                                <div class="text-right">
+                                    <a href="{% url 'access_characteraccess_create' %}">
+                                        <button type="button" class="btn btn-success" title="Add">
+                                            <span class="glyphicon glyphicon-plus"></span>
+                                        </button>
+                                    </a>
+                                </div>
+                            </td>
+                        {% endif %}
+                    </tr>
                 {% if characteraccess %}
                     {% for ca in characteraccess %}
                         <tr>
                             <td class="text-center">{{ ca.character }}</td>
                             {% if perms.access.delete_characteraccessrule %}
-                                <td class="text-center">
+                                <td class="text-right">
                                     <a href="{% url 'access_characteraccess_delete' ca.id %}">
                                         <button type="button" class="btn btn-danger" label="Revoke">
                                             <span class="glyphicon glyphicon-remove"></span>
@@ -34,19 +43,28 @@
         </div>
         <div class="panel panel-warning">
             <div class="panel-heading">Corporations</div>
-            {% if perms.access.add_corpaccessrule %}
-                <div class="text-right">
-                    <a href="{% url 'access_corpaccess_create' %}"><button type="button" class="btn btn-success" title="Add"><span class="glyphicon glyphicon-plus"></span></button></a>
-                </div>
-            {% endif %}
             <table class="table">
+                    <tr>
+                        <th class="text-center">Name</th>
+                        {% if perms.access.add_corpaccessrule %}
+                            <td>
+                                <div class="text-right">
+                                    <a href="{% url 'access_corpaccess_create' %}">
+                                        <button type="button" class="btn btn-success" title="Add">
+                                            <span class="glyphicon glyphicon-plus"></span>
+                                        </button>
+                                    </a>
+                                </div>
+                            </td>
+                        {% endif %}
+                    </tr>
                 {% if corpaccess %}
                     {% for ca in corpaccess %}
                         <tr>
                             <td class="text-center">{{ ca.corp }}</td>
                             {% if perms.access.delete_corpaccessrule %}
-                                <td class="text-center">
-                                    <a href="{% url 'access_corpaccess_delete' ca.id %}>
+                                <td class="text-right">
+                                    <a href="{% url 'access_corpaccess_delete' ca.id %}">
                                         <button type="button" class="btn btn-danger" label="Revoke">
                                             <span class="glyphicon glyphicon-remove"></span>
                                         </button>
@@ -60,19 +78,28 @@
         </div>
         <div class="panel panel-danger">
             <div class="panel-heading">Alliances</div>
-            {% if perms.access.add_allianceaccessrule %}
-                <div class="text-right">
-                    <a href="{% url 'access_allianceaccess_create' %}"><button type="button" class="btn btn-success" title="Add"><span class="glyphicon glyphicon-plus"></span></button></a>
-                </div>
-            {% endif %}
             <table class="table">
+                    <tr>
+                        <th class="text-center">Name</th>
+                        {% if perms.access.add_allianceaccessrule %}
+                            <td>
+                                <div class="text-right">
+                                    <a href="{% url 'access_allianceaccess_create' %}">
+                                        <button type="button" class="btn btn-success" title="Add">
+                                            <span class="glyphicon glyphicon-plus"></span>
+                                        </button>
+                                    </a>
+                                </div>
+                            </td>
+                        {% endif %}
+                    </tr>
                 {% if allianceaccess %}
                     {% for aa in allianceaccess %}
                         <tr>
                             <td class="text-center">{{ aa.alliance }}</td>
                             {% if perms.access.delete_allianceaccessrule %}
-                                <td class="text-center">
-                                    <a href="{% url 'access_allianceaccess_delete' aa.id %}>
+                                <td class="text-right">
+                                    <a href="{% url 'access_allianceaccess_delete' aa.id %}">
                                         <button type="button" class="btn btn-danger" label="Revoke">
                                             <span class="glyphicon glyphicon-remove"></span>
                                         </button>

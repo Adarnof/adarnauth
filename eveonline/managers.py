@@ -153,9 +153,10 @@ class EVEManager:
 
     @staticmethod
     def check_if_character_id_valid(id):
+        logger.debug("Checking if %s %s is valid character id" % (type(id), id))
         id = int(id)
         api = evelink.eve.EVE()
-        result = api.affiliations_for_characters(id).result
+        result = api.affiliations_for_characters(id).result[id]
         if 'name' in result:
             logger.debug("Determined character id %s is valid" % id)
             return True
@@ -165,11 +166,12 @@ class EVEManager:
 
     @staticmethod
     def check_if_corp_id_valid(id):
+        logger.debug("Checking if %s %s is valid corp id" % (type(id), id))
         id = int(id)
         a = evelink.api.API()
         api = evelink.corp.Corp(a)
         try:
-            result = api.corporation_sheet(corp_id=self.id).result
+            result = api.corporation_sheet(corp_id=id).result
             logger.debug("Determined corp id %s is valid" % id)
             return True
         except:
@@ -178,6 +180,7 @@ class EVEManager:
 
     @staticmethod
     def check_if_alliance_id_valid(id):
+        logger.debug("Checking if %s %s is valid alliance id" % (type(id), id))
         id = int(id)
         api = evelink.eve.EVE()
         result = api.alliances().result

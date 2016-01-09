@@ -1,0 +1,99 @@
+{% load staticfiles %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>{% block title %}Adarnauth{% endblock title %}</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <!-- Custom Fonts -->
+    <link href="{% static 'css/font-awesome.min.css' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'css/sb-admin-2.css' %}" rel="stylesheet">
+    {% block extra_css %}{% endblock extra_css %}
+    <style>
+        .grayiconecolor {
+            color: #505050;
+        }
+    </style>
+</head>
+
+<body>
+{% if user.is_authenticated %}
+    <div id="wrapper">
+        <!-- Navigation -->
+
+        <nav class="navbar navbar-inverse navbar-static-top" role="navigation">
+
+            <div class="navbar-header ">
+                <a class="navbar-brand ">
+                    <div class="fa fa-cog fa-spin"></div>
+                    Adarnauth v0.0.1
+                </a>
+            </div>
+
+            <!-- /.navbar-header -->
+
+            <ul class="nav navbar-top-links navbar-right">
+                {% if user.is_authenticated %}
+                    <li><a href="{% url 'auth_logout_user' %}">Logout</a></li>
+                {% else %}
+                    <li><a href="{% url 'auth_login_user' %}">Login</a></li>
+                {% endif %}
+            </ul>
+            <!-- /.navbar-top-links -->
+
+            <div class="navbar-default sidebar" role="navigation">
+                <div class="sidebar-nav navbar-collapse">
+                    <ul class="nav" id="side-menu">
+                        <li class="text-center divider-horizontal">
+                            <h5>Main Navigation</h5>
+                        </li>
+
+                        <li>
+                            <a class="active" href="{% url 'auth_dashboard' %}"><i
+                                    class="fa fa-dashboard fa-fw grayiconecolor"></i> Dashboard</a>
+                        </li>
+
+                        <li>
+                            <a {% if perms.access.site_access %} class="active" href="{% url 'groupmanagement_group_list' %}" {% else %} href="" {% endif %}>
+                                <i class="fa fa-cogs fa-sitemap grayiconecolor"></i> Groups</a>
+                        </li>
+                        <li class="text-center divider-horizontal">
+                            <h5>Access</h5>
+                        </li>
+                         <li>
+                            <a class="active" href="{% url 'access_list_useraccess' %}">
+                                <i class="fa fa-cogs fa-signal grayiconecolor"></i> Your Access</a>
+                        </li>
+                        <li>
+                            <a class="active" href="{% url 'access_list_access_rules' %}">
+                                <i class="fa fa-cogs fa-tasks grayiconecolor"></i> Access Rules</a>
+                        </li>
+                    </ul>
+                </div>
+                <!-- /.sidebar-collapse -->
+            </div>
+            <!-- /.navbar-static-side -->
+        </nav>
+        <div id="page-wrapper">
+            {% block content %}
+            {% endblock content %}
+        </div>
+    </div>
+{% endif %}
+<script src="{% static 'js/jquery.min.js' %}"></script>
+<script src="{% static 'js/jquery.datetimepicker.js' %}"></script>
+<script src="{% static 'js/bootstrap.min.js' %}"></script>
+<script>{% block extra_script %}
+{% endblock extra_script %}</script>
+</body>
+</html>

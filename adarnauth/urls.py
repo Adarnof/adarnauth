@@ -46,12 +46,12 @@ urlpatterns = [
     url(r'^groups/applications/([0-9]*)/delete/$', groupmanagement.views.group_application_delete, name='groupmanagement_group_application_delete'),
 
     # access
-    url(r'^access/user/$', access.views.list_useraccess, name='access_list_useraccess'),
-    url(r'^access/list/$', access.views.list_access_rules, name='access_list_access_rules'),
-    url(r'^access/character/add/$', access.views.characteraccess_create, name='access_characteraccess_create'),
-    url(r'^access/character/delete/([0-9]*)/$', access.views.characteraccess_delete, name='access_characteraccess_delete'),
-    url(r'^access/corp/add/$', access.views.corpaccess_create, name='access_corpaccess_create'),
-    url(r'^access/corp/delete/([0-9]*)/$', access.views.corpaccess_delete, name='access_corpaccess_delete'),
-    url(r'^access/alliance/add/$', access.views.allianceaccess_create, name='access_allianceaccess_create'),
-    url(r'^access/alliance/delete/([0-9]*)/$', access.views.allianceaccess_delete, name='access_allianceaccess_delete'),
+    url(r'^access/$', access.views.list_useraccess, name='access_list_useraccess'),
+    url(r'^access/rules/$', access.views.list_access_rules, name='access_list_access_rules'),
+    url(r'^access/rules/character/add/$', access.views.characteraccess_create, name='access_characteraccess_create'),
+    url(r'^access/rules/character/delete/([0-9]*)/$', access.views.characteraccess_delete, name='access_characteraccess_delete'),
+    url(r'^access/rules/corp/add/$', access.views.corpaccess_create, name='access_corpaccess_create'),
+    url(r'^access/rules/corp/delete/([0-9]*)/$', access.views.corpaccess_delete, name='access_corpaccess_delete'),
+    url(r'^access/rules/alliance/add/$', access.views.allianceaccess_create, name='access_allianceaccess_create'),
+    url(r'^access/rules/alliance/delete/([0-9]*)/$', access.views.allianceaccess_delete, name='access_allianceaccess_delete'),
 ]

@@ -40,7 +40,7 @@ def characteraccess_create(request):
             character = EVEManager.get_character_by_id(form.cleaned_data['id'])
             if CharacterAccessRule.objects.filter(character=character).exists() is False:
                 ca = CharacterAccessRule(character=character)
-                logger.info("User %s creating access for %s" % ca)
+                logger.info("User %s creating access for %s" % (request.user, ca))
                 ca.save()
             else:
                 logger.warn("User %s attempting to duplicate access for %s" % character)
@@ -55,8 +55,9 @@ def characteraccess_create(request):
 def characteraccess_delete(request, ca_id):
     logger.debug("characteracces_delete called by user %s for ca_id %s" % (request.user, ca_id))
     ca = get_object_or_404(CharacterAccessRule, id=ca_id)
-    logger.info("User %s removing access for %s" % request.user, ca)
+    logger.info("User %s removing access for %s" % (request.user, ca))
     ca.delete()
+    return redirect('access_list_access_rules')
 
 @login_required
 @permission_required('access.site_access')
@@ -70,7 +71,7 @@ def corpaccess_create(request):
             corp = EVEManager.get_corp_by_id(form.cleaned_data['id'])
             if CorpAccessRule.objects.filter(corp=corp).exists() is False:
                 ca = CorpAccessRule(corp=corp)
-                logger.info("User %s creating access for %s" % ca)
+                logger.info("User %s creating access for %s" % (request.user, ca))
                 ca.save()
             else:
                 logger.warn("User %s attempting to duplicate access for %s" % corp)
@@ -85,8 +86,9 @@ def corpaccess_create(request):
 def corpaccess_delete(request, ca_id):
     logger.debug("corpaccess_delete called by user %s for ca_id %s" % (request.user, ca_id))
     ca = get_object_or_404(CorpAccessRule, id=ca_id)
-    logger.info("User %s removing access for %s" % request.user, ca)
+    logger.info("User %s removing access for %s" % (request.user, ca))
     ca.delete()
+    return redirect('access_list_access_rules')
 
 @login_required
 @permission_required('access.site_access')
@@ -100,7 +102,7 @@ def allianceaccess_create(request):
             alliance = EVEManager.get_alliance_by_id(form.cleaned_data['id'])
             if AllianceAccessRule.objects.filter(alliance=alliance).exists() is False:
                 aa = AllianceAccessRule(alliance=alliance)
-                logger.info("User %s creating access for %s" % aa)
+                logger.info("User %s creating access for %s" % (request.user, aa))
                 aa.save()
             else:
                 logger.warn("User %s attempting to duplicate access for %s" % alliance)
@@ -115,6 +117,7 @@ def allianceaccess_create(request):
 def allianceaccess_delete(request, aa_id):
     logger.debug("allianceaccess_delete called by user %s for aa_id %s" % (request.user, aa_id))
     aa = get_object_or_404(AllianceAccessRule, id=aa_id)
-    logger.info("User %s removing access for %s" % request.user, aa)
+    logger.info("User %s removing access for %s" % (request.user, aa))
     aa.delete()
+    return redirect('access_list_access_rules')
 
