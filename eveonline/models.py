@@ -185,6 +185,31 @@ class EVEApiKeyPair(models.Model):
     characters = models.ManyToManyField(EVECharacter, related_name ='apis')
     def __unicode__(self):
         return 'API Key %s' % self.id
+    def update(self):
+        chars = []
+        logger.debug("Initiating update of %s" % self)
+        try:
+            api = evelink.api.API(api_key=(self.id, self.vcode))
+            account = evelink.account.Account(api=api)
+            api_chars = account.characters().result
+            for char in self.characters.all():
+                if not char.id in api_chars:
+                    logger.info("Character %s no longer found on %s" % (char, self))
+                    self.characters.remove(char)
+            for api_char_id in api_chars:
+                char, c = EVECharacter.objects.get_or_create(id=api_char_id)
+                char.update(api_chars[api_char_id])
+                if not char in self.characters.all():
+                    logger.info("Character %s discovered on %s" % (char, self))
+                    self.characters.add(char)
+            self.is_valid=True
+            self.save(update_fields=['is_valid'])
+        except evelink.api.APIError as error:
+            logger.exception("APIError occured while retrieving characters for %s" % self, exc_info=True)
+            logger.info("%s is invalid." % self)
+            self.characters.clear()
+            self.is_valid=False
+        
 
 class EVEStanding(models.Model):
     standing = models.DecimalField(max_digits=3, decimal_places=1, null=True)

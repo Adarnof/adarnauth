@@ -38,6 +38,17 @@ def api_key_delete(request, api_id):
     return redirect('eveonline_character_list')
 
 @login_required
+def api_key_update(request, api_id):
+    logger.debug("api_key_update called by user %s for api id %s" % (request.user, api_id))
+    api = get_object_or_404(EVEApiKeyPair, id=api_id)
+    if api.owner == request.user:
+        logger.info("User %s updating %s" % (request.user, api))
+        api.update()
+    else:
+        logger.warn("User %s not eligible to update %s" % (request.user, api))
+    return redirect('eveonline_character_list')
+
+@login_required
 def character_list(request):
     logger.debug("character_list called by user %s" % request.user)
     main = request.user.main_character

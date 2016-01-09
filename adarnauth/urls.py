@@ -61,5 +61,6 @@ urlpatterns = [
     # eveonline
     url(r'^characters/$', eveonline.views.character_list, name='eveonline_character_list'),
     url(r'^characters/api/add/$', eveonline.views.api_key_add, name='eveonline_api_key_add'),
-    url(r'^characters/api/delete/([0-9]*)/$', eveonline.views.api_key_delete, name='eveonline_api_key_delete'),
+    url(r'^characters/api/([0-9]*)/delete/$', eveonline.views.api_key_delete, name='eveonline_api_key_delete'),
+    url(r'^characters/api/([0-9]*)/update/$', eveonline.views.api_key_update, name='eveonline_api_key_update'),
 ]

@@ -68,6 +68,10 @@ def update_all_alliance_models():
         else:
             logger.warn("Failed to queue update for alliance %s - not found in active alliance list from API")
 
+@shared_task
+def update_api_key(api):
+    api.update()
+
 @receiver(post_delete, sender=EVEApiKeyPair)
 def post_delete_eveapikeypair(sender, instance, *args, **kwargs):
     logger.debug("Received post_delete signal from eveapikeypair %s" % instance)
@@ -85,3 +89,10 @@ def post_delete_eveapikeypair(sender, instance, *args, **kwargs):
                 logger.info("Character %s no longer has verified user." % char)
                 char.user = None
                 char.save(update_fields=['user'])
+
+@receiver(post_save, sender=EVEApiKeyPair)
+def post_save_eveapikeypair(sender, instance, update_fields=[], *args, **kwargs):
+    if update_fields:
+        if 'is_valid' not in update_fields:
+           logger.debug("Received post_save signal from %s" % instance)
+           update_api_key.delay(instance)

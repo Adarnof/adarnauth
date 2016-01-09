@@ -75,16 +75,21 @@
                 {% endif %}
                 {% if apis %}
                     {% for api in apis %}
-                        <div class="panel {% if api.is_valid == "True" %}panel-success{% elif api.is_valid == "None" %}panel-default{% else %}panel-danger{% endif %}">
-                            <div class="panel-heading">API ID {{ api.id }}: 
-                                                      {% if api.is_valid == "True" %}
+                        <div class="panel {% if api.is_valid == True %}panel-success{% elif api.is_valid == None %}panel-default{% else %}panel-danger{% endif %}">
+                            <div class="panel-heading">API ID {{ api.id }} 
+                                                      {% if api.is_valid == True %}
                                                           <span class="glyphicon glyphicon-ok-sign"></span>
-                                                      {% elif api.is_valid == "None" %}
+                                                      {% elif api.is_valid == None %}
                                                           <span class="glyphicon glyphicon-question-sign"></span>
                                                       {% else %}
                                                           <span class="glyphicon glyphicon-minus-sign"></span>
                                                       {% endif %}
                                 <div class="text-right">
+                                    <a href="{% url 'eveonline_api_key_update' api.id %}">
+                                        <button type="button" class="btn btn-primary">
+                                            <span class="glyphicon glyphicon-refresh"></span>
+                                        </button>
+                                    </a>
                                     <a href="{% url 'eveonline_api_key_delete' api.id %}">
                                         <button type="button" class="btn btn-danger">
                                             <span class="glyphicon glyphicon-remove"></span>
