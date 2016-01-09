@@ -30,7 +30,7 @@
                             {% if perms.access.delete_characteraccessrule %}
                                 <td class="text-right">
                                     <a href="{% url 'access_characteraccess_delete' ca.id %}">
-                                        <button type="button" class="btn btn-danger" label="Revoke">
+                                        <button type="button" class="btn btn-danger" title="Revoke">
                                             <span class="glyphicon glyphicon-remove"></span>
                                         </button>
                                     </a>
@@ -65,7 +65,7 @@
                             {% if perms.access.delete_corpaccessrule %}
                                 <td class="text-right">
                                     <a href="{% url 'access_corpaccess_delete' ca.id %}">
-                                        <button type="button" class="btn btn-danger" label="Revoke">
+                                        <button type="button" class="btn btn-danger" title="Revoke">
                                             <span class="glyphicon glyphicon-remove"></span>
                                         </button>
                                     </a>
@@ -100,7 +100,7 @@
                             {% if perms.access.delete_allianceaccessrule %}
                                 <td class="text-right">
                                     <a href="{% url 'access_allianceaccess_delete' aa.id %}">
-                                        <button type="button" class="btn btn-danger" label="Revoke">
+                                        <button type="button" class="btn btn-danger" title="Revoke">
                                             <span class="glyphicon glyphicon-remove"></span>
                                         </button>
                                     </a>
