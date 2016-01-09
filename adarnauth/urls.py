@@ -53,5 +53,5 @@ urlpatterns = [
     url(r'^access/corp/add/$', access.views.corpaccess_create, name='access_corpaccess_create'),
     url(r'^access/corp/delete/([0-9]*)/$', access.views.corpaccess_delete, name='access_corpaccess_delete'),
     url(r'^access/alliance/add/$', access.views.allianceaccess_create, name='access_allianceaccess_create'),
-    url(r'^access/alliance/delete/([0-9]*)/$', access.views.allianceaccess.delete, name='access_allianceaccess_delete'),
+    url(r'^access/alliance/delete/([0-9]*)/$', access.views.allianceaccess_delete, name='access_allianceaccess_delete'),
 ]

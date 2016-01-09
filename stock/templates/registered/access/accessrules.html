@@ -14,7 +14,7 @@
                 </div>
             {% endif %}
             <table class="table">
-                {% if characteraccess %{
+                {% if characteraccess %}
                     {% for ca in characteraccess %}
                         <tr>
                             <td class="text-center">{{ ca.character }}</td>
@@ -80,6 +80,7 @@
                                 </td>
                             {% endif %}
                         </tr>
+                    {% endfor %}
                 {% endif %}
             </table>
         </div>
