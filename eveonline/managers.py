@@ -191,3 +191,73 @@ class EVEManager:
             logger.debug("Determined alliance id %s is invalid" % id)
             return False
         
+class EVEApiManager:
+    @staticmethod
+    def get_characters_from_api(id, vcode):
+        chars = []
+        logger.debug("Getting characters from api id %s" % id)
+        try:
+            api = evelink.api.API(api_key=(id, vcode))
+            account = evelink.account.Account(api=api)
+            chars = account.characters()
+        except evelink.api.APIError as error:
+            logger.exception("APIError occured while retrieving characters for api id %s" % api_id, exc_info=True)
+
+        logger.debug("Retrieved characters %s from api id %s" % (chars, id))
+        return chars
+
+    @staticmethod
+    def check_api_is_type_account(id, vcode):
+        logger.debug("Checking if api id %s is account." % id)
+        try:
+            api = evelink.api.API(api_key=(id, vcode))
+            account = evelink.account.Account(api=api)
+            info = account.key_info()
+            logger.debug("API id %s is type %s" % (id, info[0]['type']))
+            return info[0]['type'] == "account"
+
+        except evelink.api.APIError as error:
+            logger.exception("APIError occured while checking if api id %s is type account" % id, exc_info=True)
+
+        return None
+
+    @staticmethod
+    def check_api_key_is_valid(id, vcode):
+        logger.debug("Checking if api id %s is valid." % id)
+        try:
+            api = evelink.api.API(api_key=(id, vcode))
+            account = evelink.account.Account(api=api)
+            info = account.key_info()
+            logger.info("Verified api id %s is valid." % id)
+            return True
+        except:
+            logger.info("API id %s is invalid." % id)
+            return False
+
+    @staticmethod
+    def check_if_api_server_online():
+        logger.debug("Checking if API server online.")
+        try:
+            api = evelink.api.API()
+            server = evelink.server.Server(api=api)
+            info = server.server_status()
+            logger.info("Verified API server is online and reachable.")
+            return True
+        except evelink.api.APIError as error:
+            logger.exception("APIError occured while trying to query api server status.", exc_info=True)
+
+        logger.warn("Unable to reach API server.")
+        return False
+
+    @staticmethod
+    def get_corp_standings_from_api(id, vcode):
+        try:
+            logger.debug("Getting corp standings with api id %s" % id)
+            api = evelink.api.API(api_key=(id, vcode))
+            corp = evelink.corp.Corp(api=api)
+            corpinfo = corp.contacts()
+            results = corpinfo[0]
+            return results
+        except evelink.api.APIError as error:
+            logger.exception("APIError occured while retrieving corp standings from api id %s" % id, exc_info=True)
+        return {}
