@@ -6,13 +6,14 @@ The goal of this project is to overhaul [AllianceAuth](https://github.com/R4stl1
 - [x] EVE model creation and updating
 - [x] EVE SSO login integration
 - [x] User access right management
-- [ ] Extended group model
+- [x] Extended group model
+- [ ] Front-end web design and views for groups, access, characters
 - [ ] Service model
 - [ ] Core service managers: openfire, mumble, phpbb, discord
-- [ ] Front-end web design and views      <-- first release upon completion
+- [ ] Front-end web design and views for services      <-- first release upon completion
 - [ ] Accessory functions: application, fleet fits, timerboard, etc
 - [ ] More service managers: ts3, slack, ipboard3, etc
-- [ ] Documentation (ongoing)
+- [ ] Documentation and Tests (ongoing)
 
 For the visual learners out there, here's an image of what the inital work on v2 is focused on. Stuff in the brown spraypain is being completely overhauled, the rest will be revamped (namely, services) or grafted on.
 
