@@ -1,6 +1,7 @@
 from django.contrib.auth.models import BaseUserManager
 from django import forms
 from eveonline.managers import EVEManager
+from .signals import user_created
 from datetime import datetime
 import logging
 
@@ -29,6 +30,7 @@ class UserManager(BaseUserManager):
         user.save()
         EVEManager.assign_character_user(char, user)
         logger.debug("User created succesfully: %s" % str(user))
+        user_created.send(sender=UserManager, user=user)
         return user
 
     def create_user(self, main_character_id, email=None, **extra_fields):

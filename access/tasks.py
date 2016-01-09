@@ -11,6 +11,7 @@ from django.contrib.auth.models import Permission
 from eveonline.signals import character_changed_corp, character_changed_alliance, character_changed_user, character_blind_save
 from .signals import user_loses_access, user_gains_access
 from authentication.models import User
+from authentication.signals import user_created
 
 logger = logging.getLogger(__name__)
 
@@ -265,3 +266,8 @@ def post_save_corpaccess(sender, instance, *args, **kwargs):
 def post_save_allianceaccess(sender, instance, *args, **kwargs):
     logger.debug("Received post_save signal from allianceaccess %s" % instance)
     generate_useraccess_by_allianceaccess.delay(instance)
+
+@receiver(user_created)
+def post_user_created(sender, user, *args, **kwargs):
+    logger.debug("Received user_created signal from user %s" % user)
+    assign_access(user)
