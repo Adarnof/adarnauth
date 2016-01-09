@@ -2,8 +2,9 @@ from django.test import TestCase
 from .models import EVECharacter, EVECorporation, EVEAlliance
 from .managers import EVEManager
 import evelink
+import logging
 
-# Create your tests here.
+logger = logging.getLogger(__name__)
 
 class CharacterTestCase(TestCase):
     good_char_id = 234899860

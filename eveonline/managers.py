@@ -150,3 +150,32 @@ class EVEManager:
                 logger.info("Alliance %s no longer exists. Deleting model." % id)
                 alliance.delete()
         logger.debug("Finished updating alliance models %s" % ids)
+
+    @staticmethod
+    def check_if_character_id_valid(id):
+        api = evelink.eve.EVE()
+        result = api.affiliations_for_characters(id).result
+        if 'name' in result:
+            return True
+        else:
+            return False
+
+    @staticmethod
+    def check_if_corp_id_valid(id):
+        a = evelink.api.API()
+        api = evelink.corp.Corp(a)
+        try:
+            result = api.corporation_sheet(corp_id=self.id).result
+            return True
+        except:
+            return False
+
+    @staticmethod
+    def check_if_alliance_id_valid(id):
+        api = evelink.eve.EVE()
+        result = api.alliances().result
+        if id in result:
+            return True
+        else:
+            return False
+        

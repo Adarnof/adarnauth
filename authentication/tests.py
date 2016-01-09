@@ -1,6 +1,9 @@
 from django.test import TestCase
 from .models import User
 from .managers import UserManager
+import logging
+
+logger = logging.getLogger(__name__)
 
 class UserTestCate(TestCase):
     def setUp(self):

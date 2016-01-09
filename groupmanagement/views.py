@@ -74,7 +74,7 @@ def group_application_create(request, group_id):
 def group_application_accept(request, app_id):
     logger.debug("group_application_accept called by user %s for app id %s" % (request.user, group_id))
     app = get_object_or_404(GroupApplication, id=app_id)
-    if app.extended_group.owner == request.user or request.user in app.extended_group.admins:
+    if app.extended_group.owner == request.user or request.user in app.extended_group.admins.all():
         logger.info("User %s accepting %s" % (request.user, app))
         app.accept()
     else:
@@ -87,7 +87,7 @@ def group_application_accept(request, app_id):
 def group_application_reject(request, app_id):
     logger.debug("group_application_reject called by user %s for app_id %s" % (request.user, group_id))
     app = get_object_or_404(GroupApplication, id=app_id)
-    if app.extended_group.owner == request.user or request.user in app.extended_group.admins:
+    if app.extended_group.owner == request.user or request.user in app.extended_group.admins.all():
         logger.info("User %s rejecting %s" % (request.user, app))
         app.reject()
     else:

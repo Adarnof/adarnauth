@@ -6,6 +6,9 @@ import os
 from .tasks import generate_useraccess_by_characteraccess, generate_useraccess_by_corpaccess, generate_useraccess_by_allianceaccess, assess_access, assign_access
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
+import logging
+
+logger = logging.getLogger(__name__)
 
 class UserAccessAssignmentTestCase(TestCase):
     good_char_id = 94677678
