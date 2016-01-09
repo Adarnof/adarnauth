@@ -1,7 +1,10 @@
 from celery.task import periodic_task
 from celery import shared_task
 from celery.task.schedules import crontab
+from django.dispatch import receiver
+from django.db.models.signals import post_delete, post_save
 from .models import EVECharacter, EVECorporation, EVEAlliance, EVEStanding, EVEApiKeyPair
+from authentication.models import User
 import evelink
 import logging
 
@@ -64,3 +67,21 @@ def update_all_alliance_models():
             update_alliance_with_result.delay(id, result[id])
         else:
             logger.warn("Failed to queue update for alliance %s - not found in active alliance list from API")
+
+@receiver(post_delete, sender=EVEApiKeyPair)
+def post_delete_eveapikeypair(sender, instance, *args, **kwargs):
+    logger.debug("Received post_delete signal from eveapikeypair %s" % instance)
+    chars = instance.characters.all()
+    for char in chars:
+        logger.debug("Validating character %s still owned via api" % char)
+        for api in char.apis.all():
+            if api.owner == char.user:
+                logger.debug("Character %s still owned by %s through %s" % (char, char.user, api))
+                break
+        else:
+            if User.objects.filter(main_character_id==char.id).exists():
+                logger.debug("Preserving character %s user as is a main." % char)
+            else:
+                logger.info("Character %s no longer has verified user." % char)
+                char.user = None
+                char.save(update_fields=['user'])

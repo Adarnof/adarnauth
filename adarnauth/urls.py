@@ -19,6 +19,7 @@ from django.contrib import admin
 import authentication.views
 import groupmanagement.views
 import access.views
+import eveonline.views
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
@@ -56,4 +57,9 @@ urlpatterns = [
     url(r'^access/rules/corp/delete/([0-9]*)/$', access.views.corpaccess_delete, name='access_corpaccess_delete'),
     url(r'^access/rules/alliance/add/$', access.views.allianceaccess_create, name='access_allianceaccess_create'),
     url(r'^access/rules/alliance/delete/([0-9]*)/$', access.views.allianceaccess_delete, name='access_allianceaccess_delete'),
+
+    # eveonline
+    url(r'^characters/$', eveonline.views.character_list, name='eveonline_character_list'),
+    url(r'^characters/api/add/$', eveonline.views.api_key_add, name='eveonline_api_key_add'),
+    url(r'^characters/api/delete/([0-9]*)/$', eveonline.views.api_key_delete, name='eveonline_api_key_delete'),
 ]

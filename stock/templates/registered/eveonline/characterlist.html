@@ -1,0 +1,119 @@
+{% extends "public/base.html" %}
+{% load staticfiles %}
+
+{% block title %}Characters{% endblock %}
+
+{% block content %}
+    <div class="col-lg-12">
+        <h1 class="page-header text-center">Characters</h1>
+            <div class="col-lg-12 container" id="example">
+                <div class="row">
+                    <div class="col-lg-6 text-center">
+                        <div class="panel panel-primary">
+                            <div class="panel-heading">Main Character</div>
+                            <div class="panel-body">
+                                {% if main %}
+                                    <div class="col-lg-5 col-sm-2"><img class="ra-avatar img-responsive"
+                                                                        src="https://image.eveonline.com/Character/{{ main.id }}_128.jpg">
+                                    </div>
+                                    <div class="col-lg-7 col-sm-2">
+                                        <h4 class="">{{ main.name }}</h4>
+                                        <p>{{ main.corp_name }}</p>
+                                        <p>{{ character.alliance_name }}</p>
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-danger" role="alert">Missing main character model.</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 text-center">
+                        <div class="panel panel-primary">
+                            <div class="panel-heading">API Key Summary</div>
+                            <table class="table">
+                                <tr>
+                                    <th class="text-center">Valid</th>
+                                    <td class="text-left">{{ valid }}</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-center">Invalid</th>
+                                    <td class="text-left">{{ invalid }}</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-center">Unverified</th>
+                                    <td class="text-left">{{ unverified }}</td>
+                                </tr>
+                            </table>
+                        <a href="{% url 'eveonline_api_key_add' %}">
+                            <button type="button" class="btn btn-large btn-block btn-success" label="Add API Key">Add API Key</button>
+                        </a>
+                        </div>
+                    </div>
+                </div>
+                {% if orphans %}
+                    <div class="panel panel-warning">
+                        <div class="panel-heading">Characters Missing APIs</div>
+                        <table class="table">
+                            <tr>
+                                <th class="text-center"></th>
+                                <th class="text-center">Name</th>
+                                <th class="text-center">Corp</th>
+                                <th class="text-center">Alliance</th>
+                            </tr>
+                            {% for orphan in orphans %}
+                                <tr>
+                                    <td class="text-center">
+                                        <img class="ra-avatar img-responsive" src="https://image.eveonline.com/Character/{{ orphan.id }}_64.jpg">
+                                    </td>
+                                    <td class="text-center">{{ orphan.name }}</td>
+                                    <td class="text-center">{{ orphan.corp_name }}</td>
+                                    <td class="text-center">{{ orphan.alliance_name }}</td>
+                                </tr>
+                            {% endfor %}
+                        </table>
+                    </div>
+                {% endif %}
+                {% if apis %}
+                    {% for api in apis %}
+                        <div class="panel {% if api.is_valid == "True" %}panel-success{% elif api.is_valid == "None" %}panel-default{% else %}panel-danger{% endif %}">
+                            <div class="panel-heading">API ID {{ api.id }}: 
+                                                      {% if api.is_valid == "True" %}
+                                                          <span class="glyphicon glyphicon-ok-sign"></span>
+                                                      {% elif api.is_valid == "None" %}
+                                                          <span class="glyphicon glyphicon-question-sign"></span>
+                                                      {% else %}
+                                                          <span class="glyphicon glyphicon-minus-sign"></span>
+                                                      {% endif %}
+                                <div class="text-right">
+                                    <a href="{% url 'eveonline_api_key_delete' api.id %}">
+                                        <button type="button" class="btn btn-danger">
+                                            <span class="glyphicon glyphicon-remove"></span>
+                                        </button>
+                                    </a>
+                                </div>
+                            </div>
+                            <table class="table">
+                                <tr>
+                                    <th class="text-center"></th>
+                                    <th class="text-center">Name</th>
+                                    <th class="text-center">Corp</th>
+                                    <th class="text-center">Alliance</th>
+                                </tr>
+                                {% for char in api.characters.all %}
+                                    <tr>
+                                        <td class="text-center">
+                                            <img class="ra-avatar img-responsive" src="https://image.eveonline.com/Character/{{ char.id }}_64.jpg">
+                                        </td>
+                                        <td class="text-center">{{ char.name }}</td>
+                                        <td class="text-center">{{ char.corp_name }}</td>
+                                        <td class="text-center">{{ char.alliance_name }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </table>
+                        </div>
+                    {% endfor %}
+                 {% endif %}
+             </div>
+         </div>
+     </div>
+{% endblock %}
