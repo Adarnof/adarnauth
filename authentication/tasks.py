@@ -2,7 +2,7 @@ from celery import shared_task
 import requests
 import logging
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 @shared_task
 def get_character_id_from_sso_code(authorization_code):
