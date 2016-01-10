@@ -47,19 +47,21 @@ def assign_access(user):
             corp = EVECorporation.objects.get(id=char.corp_id)
             if CorpAccessRule.objects.filter(corp=corp).exists():
                 ca = CorpAccessRule.objects.get(corp=corp)
-                logger.debug("CorpAccess rule exists for corp %s. Assigning." % corp)
-                ua = UserAccess(user=user, character=char)
-                ua.set_rule(ca)
-                ua.save()
+                if ca.access.filter(user=user).filter(character=char).exists() is not True:
+                    logger.debug("CorpAccess rule exists for corp %s. Assigning." % corp)
+                    ua = UserAccess(user=user, character=char)
+                    ua.set_rule(ca)
+                    ua.save()
         if EVEAlliance.objects.filter(id=char.alliance_id).exists():
             logger.debug("Alliance model exists for character %s alliance %s" % (char, char.alliance_name))
             alliance = EVEAlliance.objects.get(id=char.alliance_id)
             if AllianceAccessRule.objects.filter(alliance=alliance).exists():
                 aa = AllianceAccessRule.objects.get(alliance=alliance)
-                logger.debug("AllianceAccess rule exists for alliance %s. Assigning." % alliance)
-                ua = UserAccess(user=user, character=char)
-                ua.set_rule(aa)
-                ua.save()
+                if aa.access.filter(user=user).filter(character=char).exists() is not True:
+                    logger.debug("AllianceAccess rule exists for alliance %s. Assigning." % alliance)
+                    ua = UserAccess(user=user, character=char)
+                    ua.set_rule(aa)
+                    ua.save()
     logger.info("Finished generating useraccess models for user %s" % user)
     assess_access(user)
 

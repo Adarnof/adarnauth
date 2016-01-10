@@ -202,6 +202,13 @@ class EVEApiKeyPair(models.Model):
                 if not char in self.characters.all():
                     logger.info("Character %s discovered on %s" % (char, self))
                     self.characters.add(char)
+            for char in self.characters.all():
+                if not char.user:
+                    char.user = self.owner
+                    logger.info("Assigning character %s to %s via %s" % (char, self.owner, self))
+                    char.save(update_fields=['user'])
+                else:
+                    logger.error("Character %s already claimed by %s - cannot assign to %s via %s" % (char, char.user, self.owner, self))
             self.is_valid=True
             self.save(update_fields=['is_valid'])
         except evelink.api.APIError as error:
