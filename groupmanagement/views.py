@@ -307,7 +307,7 @@ def group_transfer_ownership(request, group_id):
     exgroup = get_object_or_404(ExtendedGroup, id=group_id)
     choices = []
     for a in exgroup.admins.all():
-        choices.append[(a.id, str(a))]
+        choices.append((a.pk, str(a)))
     if exgroup.owner == request.user:
         if request.method == 'POST':
             form = GroupTransferForm(request.POST)
@@ -315,7 +315,7 @@ def group_transfer_ownership(request, group_id):
             logger.debug("Request type POST, contains for, is valid: %s" % form.is_valid())
             if form.is_valid():
                 admin_id = form.cleaned_data['owner']
-                admin = get_object_or_404(User, pk=id)
+                admin = get_object_or_404(User, pk=admin_id)
                 exgroup.owner = admin
                 logger.info("User %s transferring ownership of group %s to %s" % (request.user, exgroup, admin))
                 exgroup.save(update_fields=['owner'])
