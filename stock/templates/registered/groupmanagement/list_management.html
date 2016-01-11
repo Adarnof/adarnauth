@@ -46,7 +46,9 @@
                             {% if perms.groupmanagement.change_extendedgroup %}
                                 <a href="{% url 'groupmanagement_group_edit' g.id %}"><button type="button" class="btn btn-success" title="Edit"><span class="glyphicon glyphicon-pencil"></span></button></a>
                             {% endif %}
-                            <a href="{% url 'groupmanagement_group_transfer_ownership' g.id %}"><button type="button" class="btn btn-warning" title="Transfer Ownership"><span class="glyphicon glyphicon-share-alt"></span></button></a>
+                            {% if g.admins.all %}
+                                <a href="{% url 'groupmanagement_group_transfer_ownership' g.id %}"><button type="button" class="btn btn-warning" title="Transfer Ownership"><span class="glyphicon glyphicon-share-alt"></span></button></a>
+                            {% endif %}
                             {% if perms.groupmanagement.delete_extendedgroup %}
                                 <a href="{% url 'groupmanagement_group_delete' g.id %}"><button type="button" class="btn btn-danger" title="Delete"><span class="glyphicon glyphicon-trash"></span></button></a>
                             {% endif %}

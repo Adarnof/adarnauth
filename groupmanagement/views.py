@@ -121,16 +121,24 @@ def group_application_delete(request, app_id):
 @permission_required('groupmanagement.add_extendedgroup')
 def group_create(request):
     logger.debug("group_create called by user %s" % request.user)
+    choices = [(None, 'None'),]
+    for g in ExtendedGroup.objects.all():
+        if g.owner == request.user or request.user in g.admins.all():
+            choices.append((g.id, str(g)))
     if request.method == 'POST':
         form = GroupAddForm(request.POST)
+        form.fields['parent'].choices = choices
         logger.debug("Received POST request containing form, is valid: %s" % form.is_valid())
-        logger.debug(request.POST)
         if form.is_valid():
             name = form.cleaned_data['name']
             desc = form.cleaned_data['description']
-            hidden_str = form.cleaned_data['hidden']
-            parent_str = form.cleaned_data['parent']
-            app_str = form.cleaned_data['applications']
+            hidden = form.cleaned_data['hidden']
+            parent_id = form.cleaned_data['parent']
+            if parent_id:
+                parent = get_object_or_404(ExtendedGroup, id=parent_id)
+            else:
+                parent = None
+            app = form.cleaned_data['applications']
             group, c = Group.objects.get_or_create(name=name)
             if c is False:
                 if ExtendedGroup.objects.filter(group=group).exists() is False:
@@ -141,11 +149,10 @@ def group_create(request):
             e = ExtendedGroup(group=group, owner=request.user, description=desc, hidden=hidden, parent=parent, require_application=app)
             e.save()
             logger.info("User %s created group %s" % (request.user, e))
-        else:
-            logger.debug("Field errors: %s" % str(form.errors))
-            logger.debug("Non-field errors: %s" % str(form.non_field_errors()))
+        return redirect('groupmanagement_group_list_management')
     else:
-        form = GroupAddForm(user=request.user)
+        form = GroupAddForm()
+        form.fields['parent'].choices = choices
     return render(request, 'registered/groupmanagement/create.html', context={'form':form})
 
 @login_required
@@ -240,14 +247,24 @@ def group_edit(request, group_id):
     logger.debug("group_edit called by user %s for group id %s" % (request.user, group_id))
     exgroup = get_object_or_404(ExtendedGroup, id=group_id)
     if exgroup.owner == request.user:
+        choices = [(None, 'None'),]
+        for g in ExtendedGroup.objects.all().exclude(id=exgroup.id).exclude(parent=exgroup):
+            logger.debug(g)
+            if g.owner == request.user or request.user in g.admins.all():
+                choices.append((g.id, str(g)))
         if request.method == 'POST':
             form = GroupEditForm(request.POST)
+            form.fields['parent'].choices = choices
             logger.debug("Received POST request containing form, is valid: %s" % form.is_valid())
             if form.is_valid():
-                desc = form.cleaned_data['desc']
+                desc = form.cleaned_data['description']
                 hidden = form.cleaned_data['hidden']
                 app = form.cleaned_data['applications']
-                parent = form.cleaned_data['parent']
+                parent_id = form.cleaned_data['parent']
+                if parent_id:
+                    parent = get_object_or_404(ExtendedGroup, id=parent_id)
+                else:
+                    parent = None
                 update_fields=[]
                 if exgroup.description != desc:
                     exgroup.description = desc
@@ -266,7 +283,7 @@ def group_edit(request, group_id):
                     exgroup.save()
                 else:
                     logger.debug("Detected no changes between group %s and supplied form." % exgroup)
-                return redirect('groupmanagement.views.group_list')
+                return redirect('groupmanagement_group_list_management')
         else:
             data = {
                 'description': exgroup.description,
@@ -274,7 +291,8 @@ def group_edit(request, group_id):
                 'parent': exgroup.parent,
                 'applications': exgroup.require_application,
             }
-            form = GroupEditForm(user=request.user, initial=data)
+            form = GroupEditForm(initial=data)
+            form.fields['parent'].choices = choices
         return render(request, 'registered/groupmanagement/edit.html', context={'form':form})
     else:
         logger.warn("User %s not eligible to edit group %s" % (request.user, exgroup))
@@ -287,18 +305,27 @@ def group_edit(request, group_id):
 def group_transfer_ownership(request, group_id):
     logger.debug("group_transfer_ownership called by user %s for group id %s" % (request.user, group_id))
     exgroup = get_object_or_404(ExtendedGroup, id=group_id)
+    choices = []
+    for a in exgroup.admins.all():
+        choices.append[(a.id, str(a))]
     if exgroup.owner == request.user:
         if request.method == 'POST':
             form = GroupTransferForm(request.POST)
+            form.fields['owner'].choices = choices
             logger.debug("Request type POST, contains for, is valid: %s" % form.is_valid())
             if form.is_valid():
-                admin = form.cleaned_data['owner']
+                admin_id = form.cleaned_data['owner']
+                admin = get_object_or_404(User, pk=id)
                 exgroup.owner = admin
                 logger.info("User %s transferring ownership of group %s to %s" % (request.user, exgroup, admin))
                 exgroup.save(update_fields=['owner'])
                 return redirect('groupmanagement_group_list_management')
         else:
-            form = GroupTransferForm(exgroup)
+            form = GroupTransferForm()
+            form.fields['owner'].choices = choices
+            if not exgroup.admins.all():
+                logger.warn("User %s unable to transfer ownership of %s - no admins found." % (request.user, exgroup))
+                return redirect('groupmanagement_group_list_management')
         return render(request, 'registered/groupmanagement/transfer.html', context={'form':form})
     else:
         logger.warn("User %s not eligible to transfer ownership of %s" % (request.user, exgroup))
