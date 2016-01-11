@@ -7,7 +7,7 @@ The goal of this project is to overhaul [AllianceAuth](https://github.com/R4stl1
 - [x] EVE SSO login integration
 - [x] User access right management
 - [x] Extended group model
-- [ ] Front-end web design and views for groups, access, characters
+- [x] Front-end web design and views for groups, access, characters
 - [ ] Service model
 - [ ] Core service managers: openfire, mumble, phpbb, discord
 - [ ] Front-end web design and views for services      <-- first release upon completion
