@@ -121,3 +121,39 @@ def allianceaccess_delete(request, aa_id):
     aa.delete()
     return redirect('access_list_access_rules')
 
+
+@login_required
+@permission_required('access.site_access')
+@permission_required('access.audit_access')
+def view_character_access(request, ca_id):
+    logger.debug("view_character_access called by user %s for characteraccessrule id %s" % (request.user, ca_id))
+    ca = get_object_or_404(CharacterAccessRule, id=ca_id)
+    ua = ca.access.all()
+    return render(request, 'registered/access/viewrule.html', context={'type':'Character', 'rule':ca, 'useraccess':ua})
+
+@login_required
+@permission_required('access.site_access')
+@permission_required('access.audit_access')
+def view_corp_access(request, ca_id):
+    logger.debug("view_character_access called by user %s for characteraccessrule id %s" % (request.user, ca_id))
+    ca = get_object_or_404(CorpAccessRule, id=ca_id)
+    ua = ca.access.all()
+    return render(request, 'registered/access/viewrule.html', context={'type':'Corp', 'rule':ca, 'useraccess':ua})
+
+@login_required
+@permission_required('access.site_access')
+@permission_required('access.audit_access')
+def view_alliance_access(request, aa_id):
+    logger.debug("view_character_access called by user %s for characteraccessrule id %s" % (request.user, aa_id))
+    aa = get_object_or_404(AllianceAccessRule, id=aa_id)
+    ua = aa.access.all()
+    return render(request, 'registered/access/viewrule.html', context={'type':'Alliance', 'rule':aa, 'useraccess':ua})
+
+@login_required
+@permission_required('access.site_access')
+@permission_required('acces.audit_access')
+def recheck_access(request, ua_id):
+    logger.debug("recheck_access called by user %s for useraccess id %s" % (request.user, ua_id))
+    ua = get_object_or_404(UserAccess, id=ua_id)
+    ua.verify()
+    return redirect('access_list_access_rules')

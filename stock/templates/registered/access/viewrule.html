@@ -1,0 +1,34 @@
+{% extends "public/base.html" %}
+{% load staticfiles %}
+
+{% block title %}Site Access{% endblock %}
+
+{% block content %}
+    <div class="col-lg-12">
+        <h1 class="page-header text-center">User Access By {{ type }} Rule</h1>
+        <div class="panel panel-success">
+            <div class="panel-heading">{{ rule }}</div>
+            <table class="table">
+                <tr>
+                    <th class="text-center">User</th>
+                    <th class="text-center">Access</th>
+                    <th class="text-center"></th>
+                </tr>
+                {% for ua in useraccess %}
+                    <tr>
+                        <td class="text-center">{{ ua.user }}</td>
+                        <td class="text-center">{{ ua }}</td>
+                        <td class="text-right">
+                            <a href="{% url 'access_recheck_useraccess' ua.id %}">
+                                <button type="button" class="btn btn-primary">
+                                    <span class="glyphicon glyphicon-refresh"></span>
+                                </button>
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

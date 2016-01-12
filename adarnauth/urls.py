@@ -50,13 +50,17 @@ urlpatterns = [
 
     # access
     url(r'^access/$', access.views.list_useraccess, name='access_list_useraccess'),
+    url(r'^access/([0-9]*)/recheck/$', access.views.recheck_access, name='access_recheck_useraccess'),
     url(r'^access/rules/$', access.views.list_access_rules, name='access_list_access_rules'),
     url(r'^access/rules/character/add/$', access.views.characteraccess_create, name='access_characteraccess_create'),
-    url(r'^access/rules/character/delete/([0-9]*)/$', access.views.characteraccess_delete, name='access_characteraccess_delete'),
+    url(r'^access/rules/character/([0-9]*)/delete/$', access.views.characteraccess_delete, name='access_characteraccess_delete'),
+    url(r'^access/rules/character/([0-9]*)/view/$', access.views.view_character_access, name='access_view_character_access'),
     url(r'^access/rules/corp/add/$', access.views.corpaccess_create, name='access_corpaccess_create'),
-    url(r'^access/rules/corp/delete/([0-9]*)/$', access.views.corpaccess_delete, name='access_corpaccess_delete'),
+    url(r'^access/rules/corp/([0-9]*)/delete/$', access.views.corpaccess_delete, name='access_corpaccess_delete'),
+    url(r'^access/rukes/corp/([0-9]*)/view/$', access.views.view_corp_access, name='access_view_corp_access'),
     url(r'^access/rules/alliance/add/$', access.views.allianceaccess_create, name='access_allianceaccess_create'),
-    url(r'^access/rules/alliance/delete/([0-9]*)/$', access.views.allianceaccess_delete, name='access_allianceaccess_delete'),
+    url(r'^access/rules/alliance/([0-9]*)/delete/$', access.views.allianceaccess_delete, name='access_allianceaccess_delete'),
+    url(r'^access/rules/alliance/([0-9]*)/view/$', access.views.view_alliance_access, name='access_view_alliance_access'),
 
     # eveonline
     url(r'^characters/$', eveonline.views.character_list, name='eveonline_character_list'),
