@@ -2,6 +2,7 @@ from django.test import TestCase
 from .models import UserAccess, CharacterAccessRule, CorpAccessRule, AllianceAccessRule
 from authentication.models import User
 from eveonline.managers import EVEManager
+from eveonline.models import EVECharacter, EVECorporation, EVEAlliance
 import os
 from .tasks import generate_useraccess_by_characteraccess, generate_useraccess_by_corpaccess, generate_useraccess_by_allianceaccess, assess_access, assign_access
 from django.contrib.auth.models import Permission
@@ -19,9 +20,12 @@ class UserAccessAssignmentTestCase(TestCase):
         super(UserAccessAssignmentTestCase, self).__init__(*args, **kwargs)
         self.good_user = User.objects.create_user(main_character_id=self.good_char_id)
         self.bad_user = User.objects.create_user(main_character_id=self.bad_char_id)
-        self.char = EVEManager.get_character_by_id(self.good_char_id)
-        self.corp = EVEManager.get_corp_by_id(self.corp_id)
-        self.alliance = EVEManager.get_alliance_by_id(self.alliance_id)
+        self.char = EVECharacter(id=self.good_char_id, corp_id=self.corp_id)
+        self.corp = EVECorporation(id=self.corp_id)
+        self.alliance = EVEAlliance(id=self.alliance_id)
+        self.char.save()
+        self.corp.save()
+        self.alliance.save()
         self.perm, c = Permission.objects.get_or_create(content_type=ContentType.objects.get_for_model(UserAccess), codename='site_access')
 
     def setUp(self):
@@ -33,7 +37,7 @@ class UserAccessAssignmentTestCase(TestCase):
         logger.debug("      test_create_characteraccess")
         logger.debug("-----------------------------------------")
         #ensure useraccess generated for correct user upon creation of characteraccess rule
-        ca = CharacterAccessRule.objects.create(character=self.char)
+        ca = CharacterAccessRule(character=self.char)
         ca.save()
         #can't be sure celery is running. Manually calling task.
         generate_useraccess_by_characteraccess(ca)

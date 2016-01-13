@@ -17,7 +17,7 @@ class UserTestCate(TestCase):
         main_character_id = 234899860
         user = User.objects.create_user(main_character_id=main_character_id)
         #ensure user has characters
-        self.assertEqual(len(user.get_characters()), 1)
+        self.assertEqual(len(user.characters.all()), 1)
 
     def test_create_user_with_bad_char_id(self):
         logger.debug("-----------------------------------------")
