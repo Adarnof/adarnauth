@@ -163,3 +163,9 @@ def m2m_changed_eveapikeypair_characters(sender, instance, action, model, revers
             logger.debug("%s characters changed in %s" % (len(chars), instance))
             for char in chars:
                 assess_character_owner.delay(char)
+
+@receiver(post_delete, sender=User)
+def post_delete_user(sender, instance, *args, **kwargs):
+    logger.debug("Received post_delete signal from user %s" % instance)
+    for char in user.characters.all():
+        assess_character_owner.delay(char)
