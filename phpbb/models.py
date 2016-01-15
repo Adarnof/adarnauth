@@ -7,19 +7,29 @@ from authentication.models import User, Group
 from passlib.apps import phpbb3_context
 import re
 import logging
+import os
+from datetime import datetime
 
 logger = loggin.getLogger(__name__)
 
 class Phpbb3Group(models.Model):
+    service = models.ForeignKey(Phpbb3Service, on_delete=models.CASCADE)
     groups = models.ManyToManyField(Group)
     group_id = models.PositiveIntegerField()
     group_name = models.CharField(max_length=254)
 
+    class Meta:
+        unique_together = ("group_id", "service")
+
 class Phpbb3User(models.Model):
-    user = models.OneToOneField(User)
+    service = models.ForeignKey(Phpbb3Service, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
     phpbb_user_id = models.PositiveIntegerField()
-    phpbb_user_name = models.CharField(max_length=254)
+    phpbb_username = models.CharField(max_length=254)
     phpbb_groups = models.ManyToManyField(PhpbbGroup, blank=True, null=True)
+
+    class Meta:
+        unique_together = ("user", "service")
 
 class Phpbb3Service(BaseServiceModel):
     mysql_user = models.CharField(max_length=254)
@@ -28,6 +38,8 @@ class Phpbb3Service(BaseServiceModel):
     mysql_database_host = models.CharField(max_length=254, default='127.0.0.1')
     mysql_database_port = models.PositiveIntegerField(default=3306)
 
+    address = models.CharField(max_length=254)
+    revoked_email = models.EmailField(max_length=254)
     set_avatars = models.BooleanField(default=False)
 
     # SQL commands shamelessly stolen from v1 #
@@ -65,6 +77,11 @@ class Phpbb3Service(BaseServiceModel):
         db = MySQLdb.connect(user=self.mysql_user, passwd=self.mysql_password, db=self.mysql_database_name, host=self.mysql_database_host, port=self.mysql_database_port)
         return db.cursor()
         
+    def __get_current_utc_date():
+        d = datetime.utcnow()
+        unixtime = calendar.timegm(d.utctimetuple())
+        return unixtime
+
     def __add_avatar(self, user_id, character_id):
         logger.debug("Adding EVE character id %s portrait as phpbb avater for user %s" % (character_id, user_id))
         avatar_url = "http://image.eveonline.com/Character/" + character_id + "_64.jpg"
@@ -73,6 +90,9 @@ class Phpbb3Service(BaseServiceModel):
 
     def __gen_hash(self, password):
         return phpbb3_context.encrypt(password)
+
+    def __generate_random_pass(self):
+        return os.urandom(8).encode('hex')
 
     def __santatize_username(self, username):
         return re.sub(r'[^\w+]+', '_', username) 
@@ -140,7 +160,9 @@ class Phpbb3Service(BaseServiceModel):
         cursor.execute(self.SQL_CLEAR_USER_PERMISSIONS, [user_id])
         logger.info("Removed phpbb user id %s from group id %s" % (user_id, group_id))
 
-    def __update_user_info(username, email=None, password):
+    def __update_user_info(username, password, email=None):
+        if not email:
+            email = self.revoked_email
         logger.debug("Updating phpbb user %s info: username %s password of length %s" % (username, email, len(password)))
         pwhash = self..__gen_hash(password)
         cursor = self.__get_cursor()
@@ -156,6 +178,25 @@ class Phpbb3Service(BaseServiceModel):
                                                             "", ""])
         logger.info("Added phpbb user %s" % username)
 
+    def __lock_user(self, username):
+        logger.debug("Disabling phpbb user %s" % username)
+        password = self.__generate_random_pass()
+        self.__update_user_info(username, password, email=self.revoked_email)
+
+    def __delete_user(self, username):
+        logger.debug("Deleting phpbb user %s" % username)
+        cursor = self.__get_cursor()
+        cursor.execute(self.SQL_DEL_USER, [username])
+        logger.info("Deleted phpbb user %s" % username)
+
+    def __get_user_groups(self, user_id):
+        logger.debug("Getting phpbb3 user id %s groups" % user_id)
+        cursor = self.__get_cursor()
+        cursor.execute(self.SQL_GET_USER_GROUPS, [user_id])
+        out = [row[0] for row in cursor.fetchall()]
+        logger.debug("Got user %s phpbb groups %s" % (user_id, out))
+        return out
+
     def test_connection(self):
         try:
             self.__get_cursot()
@@ -163,5 +204,84 @@ class Phpbb3Service(BaseServiceModel):
         except:
             return False
 
-    
-    
+    def add_user(self, user, password=None):
+        if Phpbb3User.objects.filter(user=user).filter(service=self).exists():
+            user_model = Phpbb3User.objects.get(user=user, service=self)
+            logger.error("User %s already has user account on phpbb service %s" % (user, self))   
+            return
+        if self.check_user_has_access(user) is False:
+            logger.error("User %s does not meet group requirements for phpbb service %s" % (user, self))
+            return
+        username = self.__sanatize_username(str(user))
+        logger.debug("Adding user %s to phpbb service %s with username %s" % (user, self, username))
+        if not password:
+            logger.debug("No password supplied. Generating random.")
+            password = self.__generate_random_pass()
+        self.__add_user(username, password)
+        user_id = self.__get_user_id(username)
+        if user_id:
+            user_model = Phpbb3User(user=user, username=username, user_id=user_id, service=self)
+            logger.info("Creating Phpbb3User model for user %s on service %s" % (user, self))
+            user_model.save()
+        else:
+            logger.error("Failed to add user %s to phpbb service %s" % (user, self))
+
+    def remove_user(self, user):
+        if Phpbb3User.objects.filter(user=user).filter(service=self).exists():
+            user_model = Phpbb3User.objects.get(user=user, service=service)
+            logger.info("Removing user %s from phpbb service %s" % (user, self))
+            user_model.delete()
+        else:
+            logger.error("User %s not found on phpbb service %s - unable to remove." % (user, self))
+
+    def set_password(self, user, password=None):
+        if Phpbb3User.objects.filter(user=user).filter(servive=self).exists():
+            user_model = Phpbb3User.objects.get(user=user, service=service)
+            if not password:
+                password = self.__generate_random_pass()
+            logger.info("Updating user %s password on phpbb service %s" % (user, self))
+            self.__update_user_info(user_model.username, password)
+        else:
+            logger.error("User %s not found on phpbb service %s - unable to update password." % (user, self))
+
+    def get_display_parameters(self, user):
+        if Phpbb3User.objects.filter(user=user).filter(service=self).exists():
+            user_model = Phpbb3User.objects.get(user=user, service=self)
+            username = user_model.username
+            address = self.address
+            active = True
+        else:
+            username = None
+            address = None
+            active = False
+        return {'username':username, 'address':address, 'active':active}
+
+    def sync_groups(self):
+        phpbb_groups = self.__get_all_groups()
+        logger.debug("Received %s groups on Phpbb service %s" % (len(phpbb_groups), self))
+        for g in phpbb_groups:
+            if Phpbb3Group.objects.filter(service=self).filter(group_id=g['group_id']).exists() is False:
+                logger.info("Creating model for new group %s on phpbb service %s" % (g, self))
+                group_model = Phpbb3Group(service=self, group_id=g['group_id'], group_name=g['group_name'])
+                group_model.save()
+        for g in Phpbb3Group.objects.filter(service=self):
+            if g.group_id in phpbb_groups is False:
+                logger.info("Deleting model for missing group %s on phpbb service %s" % (g, self))
+                g.delete()
+
+    def update_user_groups(self, user):
+        if Phpbb3User.objecs.filter(user=user).filter(service=self).exists():
+            user_model = Phpbb3User.objects.get(user=user, service=service)
+            logger.debug("Updating user %s groups in phpbb service %s" % (user, self))
+            groups = []
+            for g in user.groups.all():
+                for p in Phpbb3Group.objects.filter(service=self).filter(g in groups):
+                    if not p.group_id in groups:
+                        groups.append(p.id)
+            user_groups = self.__get_user_groups(user_model.user_id)
+            for g in groups:
+                if g in user_groups is false:
+                    self.__add_user_to_group(user_model.user_id, g)
+            for g in user_groups:
+                if g in groups is False:
+                    self.__remove_user_from_group(user_model.user_id, g)
