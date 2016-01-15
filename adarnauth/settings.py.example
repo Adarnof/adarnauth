@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'access',
     'groupmanagement',
     'services',
+    'phpbb',
 ]
 
 MIDDLEWARE_CLASSES = [
