@@ -8,11 +8,14 @@ The goal of this project is to overhaul [AllianceAuth](https://github.com/R4stl1
 - [x] User access right management
 - [x] Extended group model
 - [x] Front-end web design and views for groups, access, characters
-- [ ] Service model
-- [ ] Core service managers: openfire, mumble, phpbb, discord
+- [x] Service model
+- Core service managers
+  - [ ] openfire
+  - [ ] phpbb
+  - [ ] discord
 - [ ] Front-end web design and views for services      <-- first release upon completion
 - [ ] Accessory functions: application, fleet fits, timerboard, etc
-- [ ] More service managers: ts3, slack, ipboard3, etc
+- [ ] More service managers: mumble, ts3, slack, ipboard3, etc
 - [ ] Documentation and Tests (ongoing)
 
 For the visual learners out there, here's an image of what the inital work on v2 is focused on. Stuff in the brown spraypain is being completely overhauled, the rest will be revamped (namely, services) or grafted on.
