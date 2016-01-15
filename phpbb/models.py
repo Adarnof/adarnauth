@@ -3,7 +3,8 @@ from __future__ import unicode_literals
 from django.db import models
 from services.models import BaseServiceModel
 import MySQLdb
-from authentication.models import User, Group
+from authentication.models import User
+from django.contrib.auth.models import Group
 from passlib.apps import phpbb3_context
 import re
 import logging
@@ -11,26 +12,7 @@ import os
 from datetime import datetime
 import calendar
 
-logger = loggin.getLogger(__name__)
-
-class Phpbb3Group(models.Model):
-    service = models.ForeignKey(Phpbb3Service, on_delete=models.CASCADE, editable=False)
-    groups = models.ManyToManyField(Group)
-    group_id = models.PositiveIntegerField(editable=False)
-    group_name = models.CharField(max_length=254, editable=False)
-
-    class Meta:
-        unique_together = ("group_id", "service")
-
-class Phpbb3User(models.Model):
-    service = models.ForeignKey(Phpbb3Service, on_delete=models.CASCADE, editable=False)
-    user = models.OneToOneField(User, on_delete=models.CASCADE, editable=False)
-    phpbb_user_id = models.PositiveIntegerField(editable=False)
-    phpbb_username = models.CharField(max_length=254, editable=False)
-    phpbb_groups = models.ManyToManyField(PhpbbGroup, blank=True, null=True)
-
-    class Meta:
-        unique_together = ("user", "service")
+logger = logging.getLogger(__name__)
 
 class Phpbb3Service(BaseServiceModel):
     mysql_user = models.CharField(max_length=254)
@@ -165,16 +147,16 @@ class Phpbb3Service(BaseServiceModel):
         if not email:
             email = self.revoked_email
         logger.debug("Updating phpbb user %s info: username %s password of length %s" % (username, email, len(password)))
-        pwhash = self..__gen_hash(password)
+        pwhash = self.__gen_hash(password)
         cursor = self.__get_cursor()
         cursor.execute(self.SQL_DIS_USER, [email, pwhash, username])
         logger.info("Updated phpbb user %s info" % username)
 
-    def __add_user(username, email=None, password):
+    def __add_user(username, password, email=None):
         logger.debug("Adding phpbb user with username %s" % username)
         cursor = self.__get_cursor()
         pwhash = self.__gen_hash(password)
-        cursor.execute(self..SQL_ADD_USER, [username, username, pwhash,
+        cursor.execute(self.SQL_ADD_USER, [username, username, pwhash,
                                                             email, 2, self.__get_current_utc_date(),
                                                             "", ""])
         logger.info("Added phpbb user %s" % username)
@@ -291,3 +273,23 @@ class Phpbb3Service(BaseServiceModel):
             for p in user_model.phpbb3_groups.all():
                 if p.group in user.groups.all() is False:
                     user_model.phpbb3_groups.remove(p)
+
+class Phpbb3Group(models.Model):
+    service = models.ForeignKey(Phpbb3Service, on_delete=models.CASCADE, editable=False)
+    groups = models.ManyToManyField(Group)
+    group_id = models.PositiveIntegerField(editable=False)
+    group_name = models.CharField(max_length=254, editable=False)
+
+    class Meta:
+        unique_together = ("group_id", "service")
+
+class Phpbb3User(models.Model):
+    service = models.ForeignKey(Phpbb3Service, on_delete=models.CASCADE, editable=False)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, editable=False)
+    phpbb_user_id = models.PositiveIntegerField(editable=False)
+    phpbb_username = models.CharField(max_length=254, editable=False)
+    phpbb_groups = models.ManyToManyField(Phpbb3Group, blank=True, null=True)
+
+    class Meta:
+        unique_together = ("user", "service")
+
