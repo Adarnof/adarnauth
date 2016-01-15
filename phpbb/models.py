@@ -14,19 +14,19 @@ import calendar
 logger = loggin.getLogger(__name__)
 
 class Phpbb3Group(models.Model):
-    service = models.ForeignKey(Phpbb3Service, on_delete=models.CASCADE)
+    service = models.ForeignKey(Phpbb3Service, on_delete=models.CASCADE, editable=False)
     groups = models.ManyToManyField(Group)
-    group_id = models.PositiveIntegerField()
-    group_name = models.CharField(max_length=254)
+    group_id = models.PositiveIntegerField(editable=False)
+    group_name = models.CharField(max_length=254, editable=False)
 
     class Meta:
         unique_together = ("group_id", "service")
 
 class Phpbb3User(models.Model):
-    service = models.ForeignKey(Phpbb3Service, on_delete=models.CASCADE)
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    phpbb_user_id = models.PositiveIntegerField()
-    phpbb_username = models.CharField(max_length=254)
+    service = models.ForeignKey(Phpbb3Service, on_delete=models.CASCADE, editable=False)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, editable=False)
+    phpbb_user_id = models.PositiveIntegerField(editable=False)
+    phpbb_username = models.CharField(max_length=254, editable=False)
     phpbb_groups = models.ManyToManyField(PhpbbGroup, blank=True, null=True)
 
     class Meta:
@@ -147,14 +147,14 @@ class Phpbb3Service(BaseServiceModel):
             logger.error("Username %s not found on phpbb. Unable to determine user id." % username)
             return None
 
-    def __add_user_to_group(user_id, group_id):
+    def _add_user_to_group(user_id, group_id):
         logger.debug("Adding phpbb3 user id %s to group id %s" % (user_id, group_id))
         cursor = self.__get_cursor()
         cursor.execute(self.SQL_ADD_USER_GROUP, [group_id, user_id, 0])
         cursor.execute(self.SQL_CLEAR_USER_PERMISSIONS, [user_id])
         logger.info("Added phpbb user id %s to group id %s" % (user_id, group_id))
 
-    def __remove_user_from_group(user_id, group_id):
+    def _remove_user_from_group(user_id, group_id):
         logger.debug("Removing phpbb3 user id %s from group id %s" % (user_id, group_id))
         cursor = self.__get_cursor()
         cursor.execute(self.SQL_REMOVE_USER_GROUP, [user_id, group_id])
@@ -184,7 +184,7 @@ class Phpbb3Service(BaseServiceModel):
         password = self.__generate_random_pass()
         self.__update_user_info(username, password, email=self.revoked_email)
 
-    def __delete_user(self, username):
+    def _delete_user(self, username):
         logger.debug("Deleting phpbb user %s" % username)
         cursor = self.__get_cursor()
         cursor.execute(self.SQL_DEL_USER, [username])
@@ -197,6 +197,15 @@ class Phpbb3Service(BaseServiceModel):
         out = [row[0] for row in cursor.fetchall()]
         logger.debug("Got user %s phpbb groups %s" % (user_id, out))
         return out
+
+    def _update_user_groups(self, user_id, group_ids):
+        groups = self.__get_user_groups(user_id)
+        for g in groups:
+            if g['group_id'] in group_ids is False:
+                self.__remove_user_from_group(user_id, g)
+        for g in group_ids:
+            if g in groups is False:
+                self.__add_user_to_group(user_id, g)
 
     def test_connection(self):
         try:
@@ -275,16 +284,10 @@ class Phpbb3Service(BaseServiceModel):
     def update_user_groups(self, user):
         if Phpbb3User.objecs.filter(user=user).filter(service=self).exists():
             user_model = Phpbb3User.objects.get(user=user, service=service)
-            logger.debug("Updating user %s groups in phpbb service %s" % (user, self))
-            groups = []
             for g in user.groups.all():
                 for p in g.phpbb3group_set.all():
-                    if not p.group_id in groups:
-                        groups.append(p.id)
-            user_groups = self.__get_user_groups(user_model.user_id)
-            for g in groups:
-                if g in user_groups is false:
-                    self.__add_user_to_group(user_model.user_id, g)
-            for g in user_groups:
-                if g in groups is False:
-                    self.__remove_user_from_group(user_model.user_id, g)
+                    if not p in user_model.phpbb3_groups.all():
+                        user_model.phpbb3_groups.add(p)
+            for p in user_model.phpbb3_groups.all():
+                if p.group in user.groups.all() is False:
+                    user_model.phpbb3_groups.remove(p)
