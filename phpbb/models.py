@@ -9,6 +9,7 @@ import re
 import logging
 import os
 from datetime import datetime
+import calendar
 
 logger = loggin.getLogger(__name__)
 
@@ -220,6 +221,8 @@ class Phpbb3Service(BaseServiceModel):
         self.__add_user(username, password)
         user_id = self.__get_user_id(username)
         if user_id:
+            if self.set_avatars:
+                self.__add_avatar(user_id, user.main_character_id)
             user_model = Phpbb3User(user=user, username=username, user_id=user_id, service=self)
             logger.info("Creating Phpbb3User model for user %s on service %s" % (user, self))
             user_model.save()
@@ -275,7 +278,7 @@ class Phpbb3Service(BaseServiceModel):
             logger.debug("Updating user %s groups in phpbb service %s" % (user, self))
             groups = []
             for g in user.groups.all():
-                for p in Phpbb3Group.objects.filter(service=self).filter(g in groups):
+                for p in g.phpbb3group_set.all():
                     if not p.group_id in groups:
                         groups.append(p.id)
             user_groups = self.__get_user_groups(user_model.user_id)
