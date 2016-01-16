@@ -9,7 +9,7 @@ The goal of this project is to overhaul [AllianceAuth](https://github.com/R4stl1
 - [x] Extended group model
 - [x] Front-end web design and views for groups, access, characters
 - [x] Service model
-- [ ]Core service managers
+- [ ] Core service managers
   - [ ] openfire
   - [x] phpbb
   - [ ] discord
