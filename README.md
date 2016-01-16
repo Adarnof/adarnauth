@@ -10,7 +10,7 @@ The goal of this project is to overhaul [AllianceAuth](https://github.com/R4stl1
 - [x] Front-end web design and views for groups, access, characters
 - [x] Service model
 - [ ] Core service managers
-  - [ ] openfire
+  - [x] openfire
   - [x] phpbb
   - [ ] discord
 - [ ] Front-end web design and views for services      <-- first release upon completion
