@@ -5,3 +5,6 @@ eveonline/migrations/*
 authentication/migrations/*
 access/migrations/*
 groupmanagement/migrations/*
+phpbb/migrations/*
+openfire/migrations/*
+services/migrations/*
