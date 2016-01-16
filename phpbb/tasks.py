@@ -32,6 +32,11 @@ def post_delete_phpbb3group(sender, instance, *args, **kwargs):
     for u in instance.phpbb3user_set.all():
         u.service._remove_user_from_group(u.user_id, instance.group_id)
 
+@receiver(post_save, sender=Phpbb3Group)
+def post_save_phpbb3group(sender, instance, *args, **kwargs):
+    logger.debug("Received post_save signal from phpbb3group %s" % instance)
+    instance.service.sync_groups()
+
 @receiver(post_delete, sender=Group)
 def post_delete_group(sender, instance, *args, **kwargs):
     logger.debug("Received post_delete signal from group %s" % instance)

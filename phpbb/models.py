@@ -108,7 +108,7 @@ class Phpbb3Service(BaseServiceModel):
             logger.debug("Got phpbb group id %s for groupname %s" % (row[0], group_name))
             return row[0]
         else:
-            logger.error("Groupname %s not found on phpbb. Unable to determine group id." % group_name)
+            logger.debug("Groupname %s not found on phpbb. Unable to determine group id." % group_name)
             return None
 
     def __create_group(group_name):
@@ -189,6 +189,20 @@ class Phpbb3Service(BaseServiceModel):
             if g in groups is False:
                 self.__add_user_to_group(user_id, g)
 
+    def _check_group_exists_by_name(self, group_name):
+        groups = self.__get_all_groups()
+        for g in groups:
+            if g['group_name']==group_name:
+                return True
+        return False
+
+    def _check_group_exists_by_id(self, group_id):
+        groups = self.__get_all_groups()
+        for g in groups:
+            if g['group_id']==group_id:
+                return True
+        return False
+
     def test_connection(self):
         try:
             self.__get_cursot()
@@ -262,6 +276,12 @@ class Phpbb3Service(BaseServiceModel):
             if g.group_id in phpbb_groups is False:
                 logger.info("Deleting model for missing group %s on phpbb service %s" % (g, self))
                 g.delete()
+        for g in phpbb_groups:
+            group_model = Phpbb3Group.objects.get(group_id=g['group_id'], service=self)
+            if group_model.group_name != g['group_name']:
+                logger.info("Updating name of phpbb group %s on service %s to %s" % (group_model, self, g['group_name']))
+                group_model.group_name = g['group_name']
+                group_model.save(update_fields['group_name'])
 
     def update_user_groups(self, user):
         if Phpbb3User.objecs.filter(user=user).filter(service=self).exists():
@@ -274,6 +294,26 @@ class Phpbb3Service(BaseServiceModel):
                 if p.group in user.groups.all() is False:
                     user_model.phpbb3_groups.remove(p)
 
+    def create_group(self, group_name):
+        safe_name = self.__sanatize_username(group_name)
+        if Phpbb3Group.objects.filter(group_name=safe_name).exists():
+            logger.error("Attempting to duplicate existing group %s on phpbb service %s" % (group_name, self))
+        else:
+            logger.info("Creating group %s on phpbb service %s" % (safe_name, self))
+            self.__create_group(group_name)
+        self.sync_groups()
+
+    def auto_configure_groups(self):
+        logger.debug("Initiating auto-configuration of groups for phpbb service %s" % self)
+        self.sync_groups()
+        for g in Group.objects.all():
+            safe_name = self.__sanatize_username(g.name)
+            if Phpbb3Group.objects.filter(service=self).filter(group_name=safe_name).exists() is False:
+                logger.info("Auto-generating group on phpbb service %s for group %s" % (self, g))
+                self.create_group(safe_name)
+                model = Phpbb3Group.objects.get(service=self, group_name=safe_name)
+                model.groups.add(g)
+
 class Phpbb3Group(models.Model):
     service = models.ForeignKey(Phpbb3Service, on_delete=models.CASCADE, editable=False)
     groups = models.ManyToManyField(Group)
@@ -282,6 +322,10 @@ class Phpbb3Group(models.Model):
 
     class Meta:
         unique_together = ("group_id", "service")
+
+    def __unicode__(self):
+        output = "%s group %s" % (self.service, self.group_name)
+        return output.encode('utf-8')
 
 class Phpbb3User(models.Model):
     service = models.ForeignKey(Phpbb3Service, on_delete=models.CASCADE, editable=False)
@@ -293,3 +337,6 @@ class Phpbb3User(models.Model):
     class Meta:
         unique_together = ("user", "service")
 
+    def __unicode__(self):
+        output = "%s user %s" % (self.service, self.user)
+        return output.encode('utf-8')

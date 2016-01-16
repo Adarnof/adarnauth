@@ -16,7 +16,13 @@ class BaseServiceModel(models.Model):
     def update_user_groups(self, user):
         raise NotImplementedError
 
+    def auto_configure_groups(self):
+        raise NotImplementedError
+
     def sync_groups(self):
+        raise NotImplementedError
+
+    def create_group(self, group_name):
         raise NotImplementedError
 
     def set_password(self, user, password=None):
