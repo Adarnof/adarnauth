@@ -4,8 +4,16 @@ from django.db.models.signals import post_delete, post_save, m2m_changed, pre_sa
 from .models import Phpbb3User, Phpbb3Group, Phpbb3Service
 from access.signals import user_loses_access
 from django.contrib.auth.models import Group
+from authentication.models import User
 
 logger = logging.getLogger(__name__)
+
+@receiver(m2m_changed, sender=User.groups.through)
+def m2m_changed_user_groups(sender, instance, action, *args, **kwargs):
+    logger.debug("Received m2m_changed signal from user %s with action %s" % (instance, action)
+    if action=="post_add" or action=="post_remove" or action=="post_clear":
+        for u in Phpbb3User.objects.filter(user=instance):
+            u.service.update_user_groups(u.user)
 
 @receiver(post_delete, sender=Phpbb3User)
 def post_delete_phpbb3user(sender, instance, *args, **kwargs):
