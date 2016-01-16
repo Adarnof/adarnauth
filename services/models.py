@@ -2,11 +2,19 @@ from __future__ import unicode_literals
 
 from django.db import models
 from django.contrib.auth.models import Group
+import re
+import os
 
 class BaseServiceModel(models.Model):
     name = models.CharField(max_length=254)
     required_groups = models.ManyToManyField(Group)
+
+    def __santatize_username(self, username):
+        return re.sub(r'[^\w+]+', '_', username) 
     
+    def __generate_random_pass(self):
+        return os.urandom(8).encode('hex')
+
     def add_user(self, user):
         raise NotImplementedError
 

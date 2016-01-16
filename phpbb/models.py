@@ -74,12 +74,6 @@ class Phpbb3Service(BaseServiceModel):
     def __gen_hash(self, password):
         return phpbb3_context.encrypt(password)
 
-    def __generate_random_pass(self):
-        return os.urandom(8).encode('hex')
-
-    def __santatize_username(self, username):
-        return re.sub(r'[^\w+]+', '_', username) 
-
     def __get_all_groups(self):
         logger.debug("Getting all phpbb3 groups.")
         cursor = self.__get_cursor()
@@ -291,7 +285,10 @@ class Phpbb3Service(BaseServiceModel):
                     if not p in user_model.phpbb3_groups.all():
                         user_model.phpbb3_groups.add(p)
             for p in user_model.phpbb3_groups.all():
-                if p.group in user.groups.all() is False:
+                for g in p.groups.all():
+                    if g in user.groups.all():
+                        break
+                else:
                     user_model.phpbb3_groups.remove(p)
 
     def create_group(self, group_name):
