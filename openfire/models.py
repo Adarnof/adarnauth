@@ -74,7 +74,7 @@ class OpenfireService(BaseServiceModel):
     def update_user_groups(self, user):
         if OpenfireUser.objects.filter(service=self).filter(user=user).exists():
             user_model = OpenfireUser.objects.get(service=self, user=user)
-            for g in user.groups.all()
+            for g in user.groups.all():
                 for o in g.openfiregroup_set.all():
                     if o in user_model.openfire_groups.all() is False:
                         user_model.openfire_groups.add(o)
@@ -123,7 +123,7 @@ class OpenfireService(BaseServiceModel):
         user_model = OpenfireUser(user=user, username=username, service=self)
         user_model.save()
 
-    def remove_user(self, user)
+    def remove_user(self, user):
         if OpenfireUser.objects.filter(service=self).filter(user=user).exists():
             user_model = OpenfireUser.objects.get(service=self, user=user)
             logger.info("Removing user %s from openfire service %s" % (user, self))
@@ -131,7 +131,7 @@ class OpenfireService(BaseServiceModel):
         else:
             logger.error("User %s not found on openfire service %s - unable to remove." % (user, self))
 
-    def set_password(self, user, password=None)
+    def set_password(self, user, password=None):
         if OpenfireUser.objects.filter(service=self).filter(user=user).exists():
             user_model = OpenfireUser.objects.get(service=self, user=user)
             if not password:
@@ -159,7 +159,7 @@ class OpenfireGroup(models.Model):
     groups = models.ManyToManyField(Group, null=True)
 
     class Meta:
-        unique_together = (service, group_name)
+        unique_together = ('service', 'group_name')
 
     def __unicode__(self):
         output = "%s group %s" % (self, self.group_name)
@@ -172,7 +172,7 @@ class OpenfireUser(models.Model):
     openfire_groups = models.ManyToManyField(OpenfireGroup, null=True)
 
     class Meta:
-        unique_together = (service, user)
+        unique_together = ('service', 'user')
 
     def __unicode__(self):
         output = "%s user %s" % (self, self.user)

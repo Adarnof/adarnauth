@@ -8,3 +8,4 @@ groupmanagement/migrations/*
 phpbb/migrations/*
 openfire/migrations/*
 services/migrations/*
+ldap/migrations/*

@@ -44,6 +44,8 @@ class Phpbb3Service(BaseServiceModel):
 
     SQL_UPDATE_USER_PASSWORD = r"UPDATE phpbb_users SET user_password = %s WHERE username = %s"
 
+    SQL_UPDATE_USER_USERNAME = r"UPDATE phpbb_users SET username = %s WHERE user_id = %s"
+
     SQL_REMOVE_USER_GROUP = r"DELETE FROM phpbb_user_group WHERE user_id=%s AND group_id=%s "
 
     SQL_GET_ALL_GROUPS = r"SELECT group_id, group_name FROM phpbb_groups"
@@ -122,6 +124,12 @@ class Phpbb3Service(BaseServiceModel):
         else:
             logger.error("Username %s not found on phpbb. Unable to determine user id." % username)
             return None
+
+    def __update_username(user_id, username):
+        logger.debug("Updating username for phpbb user %s to %s" % (user_id, username))
+        cursor = self.__get_cursor()
+        cursor.execute(self.SQL_UPDATE_USER_USERNAME, [user_id, username])
+        logger.info("Updated phpbb3 user id %s to username %s" % (user_id, username))
 
     def _add_user_to_group(user_id, group_id):
         logger.debug("Adding phpbb3 user id %s to group id %s" % (user_id, group_id))
@@ -290,6 +298,12 @@ class Phpbb3Service(BaseServiceModel):
                         break
                 else:
                     user_model.phpbb3_groups.remove(p)
+
+    def update_user_username(self, user):
+        if Phpbb3User.objecs.filter(user=user).filter(service=self).exists():
+            user_model = Phpbb3User.objects.get(user=user, service=service)
+            username = self.__sanatize_username(str(user))
+            self.__update_username(user_model.user_id, username)
 
     def create_group(self, group_name):
         safe_name = self.__sanatize_username(group_name)

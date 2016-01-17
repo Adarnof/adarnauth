@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'services',
     'phpbb',
     'openfire',
+    'ldap',
 ]
 
 MIDDLEWARE_CLASSES = [
