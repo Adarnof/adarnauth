@@ -20,6 +20,7 @@ import authentication.views
 import groupmanagement.views
 import access.views
 import eveonline.views
+import openfire.views
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
@@ -67,4 +68,10 @@ urlpatterns = [
     url(r'^characters/api/add/$', eveonline.views.api_key_add, name='eveonline_api_key_add'),
     url(r'^characters/api/([0-9]*)/delete/$', eveonline.views.api_key_delete, name='eveonline_api_key_delete'),
     url(r'^characters/api/([0-9]*)/update/$', eveonline.views.api_key_update, name='eveonline_api_key_update'),
+
+    # openfire
+    url(r'^openfire/$', openfire.views.openfireservice_list, name='openfire_service_list'),
+    url(r'^openfire/add/$', openfire.views.openfireservice_add, name='openfire_service_add'),
+    url(r'^openfire/([0-9]*)/edit/$', openfire.views.openfireservice_change, name='openfire_service_edit'),
+    url(r'^openfire/([0-9]*)/delete/$', openfire.views.openfireservice_delete, name='openfire_service_delete'),
 ]

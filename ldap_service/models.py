@@ -58,7 +58,7 @@ class LdapService(models.Model):
         return "uid=%s,%s,%s" % (username, self.USER_OU, self.base)
 
     def __gen_user_uid(self, dn):
-        return str.split(str=',', dn)[0]
+        return str.split(dn, str=',')[0]
 
     def _add_user(self, username, password):
         dn = self.__gen_user_dn(username)
@@ -96,7 +96,7 @@ class LdapService(models.Model):
         group_dn = self.__gen_group_dn(groupname)
         if self.__gen_user_uid(self.dn) in usernames:
             #protect against removing admin account so it doesn't break
-            usernames.remove(self.__gen_user_uid(self.dn)
+            usernames.remove(self.__gen_user_uid(self.dn))
         for username in usernames:
             uid = "uid=%s" % username
             dn = "%s,%s" % (uid, group_dn)
