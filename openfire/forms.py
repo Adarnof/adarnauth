@@ -1,12 +1,13 @@
 from django import forms
+from django.db import models
 from .models import OpenfireService
 
 class OpenfireServiceAddForm(forms.Form):
-    name = models.CharField(max_length=254, label="Service Name", required=True)
-    address = models.CharField(max_length=254, label="Web Address", required=True)
-    port = models.IntegerField(min_value=1, max_value=65535, label="Port", required=True)
-    restapi_address = models.CharField(max_length=254, label="RESTAPI Plugin Address", required=True)
-    restapi_secret_key = models.CharField(max_length=254, label="RESTAPI Plugin Secret Key", required=True)
+    name = forms.CharField(max_length=254, label="Service Name", required=True)
+    address = forms.CharField(max_length=254, label="Web Address", required=True)
+    port = forms.IntegerField(min_value=1, max_value=65535, label="Port", required=True)
+    restapi_address = forms.CharField(max_length=254, label="RESTAPI Plugin Address", required=True)
+    restapi_secret_key = forms.CharField(max_length=254, label="RESTAPI Plugin Secret Key", required=True)
 
     def clean(self):
         super(OpenfireServiceAddForm, self).clean()

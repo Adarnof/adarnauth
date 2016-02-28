@@ -48,7 +48,7 @@ def post_save_phpbb3group(sender, instance, *args, **kwargs):
 @receiver(post_delete, sender=Group)
 def post_delete_group(sender, instance, *args, **kwargs):
     logger.debug("Received post_delete signal from group %s" % instance)
-    for g in group.phpbb3group_set.all():
+    for g in instance.phpbb3group_set.all():
         for u in g.phpbb3user_set.all():
             u.service.update_user_groups(u.user)
 
