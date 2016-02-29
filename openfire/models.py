@@ -156,7 +156,7 @@ class OpenfireService(BaseServiceModel):
 class OpenfireGroup(models.Model):
     service = models.ForeignKey(OpenfireService, on_delete=models.CASCADE)
     group_name = models.CharField(max_length=254)
-    groups = models.ManyToManyField(Group, null=True)
+    groups = models.ManyToManyField(Group)
 
     class Meta:
         unique_together = ('service', 'group_name')
@@ -169,7 +169,7 @@ class OpenfireUser(models.Model):
     service = models.ForeignKey(OpenfireService, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     username = models.CharField(max_length=254)
-    openfire_groups = models.ManyToManyField(OpenfireGroup, null=True)
+    openfire_groups = models.ManyToManyField(OpenfireGroup, blank=True)
 
     class Meta:
         unique_together = ('service', 'user')

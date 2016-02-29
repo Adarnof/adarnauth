@@ -343,7 +343,7 @@ class Phpbb3User(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, editable=False)
     phpbb_user_id = models.PositiveIntegerField(editable=False)
     phpbb_username = models.CharField(max_length=254, editable=False)
-    phpbb_groups = models.ManyToManyField(Phpbb3Group, blank=True, null=True)
+    phpbb_groups = models.ManyToManyField(Phpbb3Group, blank=True)
 
     class Meta:
         unique_together = ("user", "service")

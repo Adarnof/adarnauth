@@ -5,6 +5,7 @@ from .tasks import get_character_id_from_sso_code
 import base64
 import logging
 from django.contrib.auth import get_user_model
+from authentication.models import User
 
 logger = logging.getLogger(__name__)
 
