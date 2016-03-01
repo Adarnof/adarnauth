@@ -13,4 +13,8 @@ from django.core.wsgi import get_wsgi_application
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "adarnauth.settings")
 
+# virtualenv wrapper
+activate_env=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bin/activate_this.py")
+execfile(activate_env, dict(__file__=activate_env))
+
 application = get_wsgi_application()

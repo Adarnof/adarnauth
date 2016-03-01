@@ -13,13 +13,25 @@
                             <div class="panel-heading">Main Character</div>
                             <div class="panel-body">
                                 {% if main %}
-                                    <div class="col-lg-5 col-sm-2"><img class="ra-avatar img-responsive"
-                                                                        src="https://image.eveonline.com/Character/{{ main.id }}_128.jpg">
+                                    <div class="col-lg-4 col-sm-2">
+                                        <table class="table">
+                                            <tr><td class="text-center"><img class="ra-avatar" src="https://image.eveonline.com/Character/{{ main.id }}_128.jpg"></td></tr>
+                                            <tr><td class="text-center">{{ main.name }}</td></tr>
+                                        </table>
                                     </div>
-                                    <div class="col-lg-7 col-sm-2">
-                                        <h4 class="">{{ main.name }}</h4>
-                                        <p>{{ main.corp_name }}</p>
-                                        <p>{{ character.alliance_name }}</p>
+                                    <div class="col-lg-4 col-sm-2">
+                                        <table class="table">
+                                            <tr><td class="text-center"><img class="ra-avatar" src="http://image.eveonline.com/Corporation/{{ main.corp_id }}_128.png"></td></tr>
+                                            <tr><td class="text-center">{{ main.corp_name }}</td></tr>
+                                        </table>
+                                    </div>
+                                    <div class="col-lg-4 col-sm-2">
+                                        {% if main.alliance_id %}
+                                            <table class="table">
+                                                <tr><td class="text-center"><img class="ra-avatar" src="https://image.eveonline.com/Alliance/{{ main.alliance_id }}_128.png"></td></tr>
+                                                <tr><td class="text-center">{{ main.alliance_name }}</td><tr>
+                                            </table>
+                                        {% endif %}
                                     </div>
                                 {% else %}
                                     <div class="alert alert-danger" role="alert">Missing main character model.</div>

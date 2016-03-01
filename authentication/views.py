@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 import logging
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -32,11 +33,11 @@ def dashboard_view(request):
     return render(request, 'registered/authentication/dashboard.html')
 
 def login_view(request):
-    return render(request, 'public/login.html')
+    return render(request, 'public/login.html', {'sso_callback_uri':settings.SSO_CALLBACK_URI, 'sso_client_id':settings.SSO_CLIENT_ID})
 
 def logout_view(request):
     logout(request)
-    return render(request, 'public/login.html')
+    return redirect('auth_dashboard')
 
 def landing_view(request):
     return render(request, 'public/landing.html')

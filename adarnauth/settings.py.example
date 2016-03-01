@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'bootstrapform',
     'authentication',
     'eveonline',
     'access',
@@ -59,7 +60,10 @@ ROOT_URLCONF = 'adarnauth.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ['customization/templates', 'stock/templates'],
+        'DIRS': [
+             os.path.join(BASE_DIR, 'customization/templates'),
+             os.path.join(BASE_DIR, 'stock/templates'),
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -131,6 +135,7 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "customization/static"),
     os.path.join(BASE_DIR, "stock/static"),
     ]
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 # Auth
 AUTH_USER_MODEL = 'authentication.User'
@@ -139,6 +144,7 @@ AUTHENTICATION_BACKENDS = ['authentication.backends.AuthenticationBackend', 'dja
 # SSO
 SSO_CLIENT_ID = os.environ.get('AA_SSO_CLEINT_ID', '')
 SSO_CLIENT_SECRET = os.environ.get('AA_SSO_CLIENT_SECRET', '')
+SSO_CALLBACK_URI = os.environ.get('AA_SSO_CALLBACK_URL', '')
 LOGIN_URL = 'auth_login_user'
 LOGIN_REDIRECT_URL = 'auth_dashboard'
 
@@ -159,13 +165,13 @@ LOGGING = {
         'debug_file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': 'debug.log',
+            'filename': os.path.join(BASE_DIR, 'log/debug.log'),
             'formatter': 'verbose'
         },
         'django_file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': 'django.log',
+            'filename': os.path.join(BASE_DIR, 'log/django.log'),
             'formatter': 'verbose'
         },
         'console': {

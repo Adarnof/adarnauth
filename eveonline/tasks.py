@@ -2,7 +2,7 @@ from celery.task import periodic_task
 from celery import shared_task
 from celery.task.schedules import crontab
 from django.dispatch import receiver
-from django.db.models.signals import post_delete, post_save, m2m_changed
+from django.db.models.signals import post_delete, post_save, m2m_changed, pre_delete
 from .models import EVECharacter, EVECorporation, EVEAlliance, EVEStanding, EVEApiKeyPair
 from authentication.models import User
 import evelink
@@ -127,30 +127,23 @@ def assess_character_owner(character):
                 character.user = None
                 character.save(update_fields=['user'])
 
-@receiver(post_delete, sender=EVEApiKeyPair)
-def post_delete_eveapikeypair(sender, instance, *args, **kwargs):
-    logger.debug("Received post_delete signal from eveapikeypair %s" % instance)
-    chars = instance.characters.all()
-    for char in chars:
-        logger.debug("Validating character %s still owned via api" % char)
-        for api in char.apis.all():
-            if api.owner == char.user:
-                logger.debug("Character %s still owned by %s through %s" % (char, char.user, api))
-                break
-        else:
-            if User.objects.filter(main_character_id==char.id).exists():
-                logger.debug("Preserving character %s user as is a main." % char)
-            else:
-                logger.info("Character %s no longer has verified user." % char)
-                char.user = None
-                char.save(update_fields=['user'])
+@receiver(pre_delete, sender=EVEApiKeyPair)
+def pre_delete_eveapikeypair(sender, instance, *args, **kwargs):
+    logger.debug("Received pre_delete signal from %s" % instance)
+    for char in instance.characters.all():
+        instance.characters.remove(char)
+        assess_character_owner.delay(char)
 
 @receiver(post_save, sender=EVEApiKeyPair)
 def post_save_eveapikeypair(sender, instance, update_fields=[], *args, **kwargs):
+    logger.debug("Received post_save signal from %s" % instance)
     if update_fields:
-        if 'is_valid' not in update_fields:
-           logger.debug("Received post_save signal from %s" % instance)
+        if 'is_valid' in update_fields is False:
+           logger.debug("Queueing update for %s" % instance)
            update_api_key.delay(instance)
+    else:
+        logger.debug("Queueing update for %s" % instance)
+        update_api_key.delay(instance)
 
 @receiver(m2m_changed, sender=EVEApiKeyPair.characters.through)
 def m2m_changed_eveapikeypair_characters(sender, instance, action, model, reverse, pk_set, *args, **kwargs):

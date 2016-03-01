@@ -178,8 +178,11 @@ def useraccess_check_on_character_changed_corp(sender, character, *args, **kwarg
         if u.access_rule.corp.id != character.corp_id:
             logger.info("Character %s new corp does not apply to corpaccess rule %s - deleting useraccess." % (character, u.access_rule))
             u.delete()
-    logger.debug("Assigning new access rights to character %s owner %s" % (character, character.user))
-    assign_access.delay(character.user)
+    if character.user:
+        logger.debug("Assigning new access rights to character %s owner %s" % (character, character.user))
+        assign_access.delay(character.user)
+    else:
+        logger.debug("Character %s does not have a user. Not assiging access." % character)
 
 @receiver(character_changed_alliance, sender=EVECharacter)
 def useraccess_check_on_character_changed_alliance(sender, character, *args, **kwargs):
@@ -189,8 +192,11 @@ def useraccess_check_on_character_changed_alliance(sender, character, *args, **k
     for u in ua:
         if u.acces_rule.alliance.id != character.alliance_id:
             logger.info("Character %s new alliance does not apply to allianceaccess rule %s - deleting useraccess." % (character, u.access_rule))
-    logger.debug("Assigning new access rights to character %s owner %s" % (character, character.user))
-    assign_access.delay(character.user)
+    if character.user:
+        logger.debug("Assigning new access rights to character %s owner %s" % (character, character.user))
+        assign_access.delay(character.user)
+    else:
+        logger.debug("Character %s does not have a user. Not assiging access." % character)
 
 @receiver(character_changed_user, sender=EVECharacter)
 def useraccess_check_on_character_changed_user(sender, character, *args, **kwargs):
@@ -200,8 +206,12 @@ def useraccess_check_on_character_changed_user(sender, character, *args, **kwarg
         if u.user != character.user:
             logger.info("Character %s new user does not match useraccess %s - deleting." % (character, u))
             u.delete()
-    logger.debug("Assigning new access rights to character %s new owner %s" % (character, character.user))
-    assign_access.delay(character.user)
+    if character.user:
+        logger.debug("Assigning new access rights to character %s owner %s" % (character, character.user))
+        assign_access.delay(character.user)
+    else:
+        logger.debug("Character %s does not have a user. Not assiging access." % character)
+
 
 @receiver(character_blind_save, sender=EVECharacter)
 def useraccess_check_on_character_blind_save(sender, character, *args, **kwargs):

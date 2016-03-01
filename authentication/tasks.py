@@ -1,11 +1,13 @@
 from celery import shared_task
 import requests
 import logging
+from django.conf import settings
+import base64
 
 logger = logging.getLogger(__name__)
 
 @shared_task
-def get_character_id_from_sso_code(authorization_code):
+def get_character_id_from_sso_code(code):
         #first we need to exchange the code for a token
         client_id = settings.SSO_CLIENT_ID
         client_secret = settings.SSO_CLIENT_SECRET

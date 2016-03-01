@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 @receiver(m2m_changed, sender=User.groups.through)
 def m2m_changed_user_groups(sender, instance, action, *args, **kwargs):
-    logger.debug("Received m2m_changed signal from user %s with action %s" % (instance, action)
+    logger.debug("Received m2m_changed signal from user %s with action %s" % (instance, action))
     if action=="post_add" or action=="post_remove" or action=="post_clear":
         for u in OpenfireUser.objects.filter(user=instance):
             u.service.update_user_groups(u.user)
