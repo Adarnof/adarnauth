@@ -9,6 +9,7 @@ from django.contrib.contenttypes.models import ContentType
 logger = logging.getLogger(__name__)
 
 class EVECharacter(models.Model):
+
     id = models.PositiveIntegerField(primary_key=True)
     name = models.CharField(max_length=254, blank=True)
     corp_id = models.PositiveIntegerField(null=True, blank=True)
@@ -19,12 +20,14 @@ class EVECharacter(models.Model):
     faction_name = models.CharField(max_length=254, null=True, blank=True)
     user = models.ForeignKey('authentication.User', null=True, on_delete=models.SET_NULL, blank=True, related_name='characters')
     standing = GenericRelation('eveonline.EVEStanding', null=True)
+
     def __unicode__(self):
         if self.name:
             return self.name.encode('utf-8')
         else:
             logger.warn("Character name missing in character model for id %s - needs an update - returning id as __unicode__" % self.id)
             return str(self.id).encode('utf-8')
+
     def update(self, char_info=None):
         logger.debug("Initiating update for character model with id %s" % str(self.id))
         if not char_info:
@@ -86,12 +89,13 @@ class EVECharacter(models.Model):
             if self.alliance_name:
                 self.alliance_name = None
                 update_fields.append('alliance_name')
-        logger.info("Finished updating character id %s from api. Changed: %s" % (self.id, update_fields))
         if update_fields:
+            logger.info("Finished updating character id %s from api. Changed: %s" % (self.id, update_fields))
             self.save(update_fields=update_fields)
         return True
 
 class EVECorporation(models.Model):
+
     id = models.PositiveIntegerField(primary_key=True)
     name = models.CharField(max_length=254, null=True, blank=True)
     alliance_id = models.PositiveIntegerField(null=True, blank=True)
@@ -99,12 +103,14 @@ class EVECorporation(models.Model):
     members = models.PositiveIntegerField(null=True, blank=True)
     ticker = models.CharField(max_length=254, null=True, blank=True)
     standing = GenericRelation('eveonline.EVEStanding', null=True)
+
     def __unicode__(self):
         if self.name:
             return self.name.encode('utf-8')
         else:
             logger.warn("Corp name missing in corp model for id %s - needs an update - returning id as __unicode__" % self.id)
             return str(self.id).encode('utf-8')
+
     def update(self, result=None):
         logger.debug("Updating corp info for corp id %s" % self.id)
         if not result:
@@ -144,16 +150,19 @@ class EVECorporation(models.Model):
         return True
 
 class EVEAlliance(models.Model):
+
     id = models.PositiveIntegerField(primary_key=True)
     name = models.CharField(max_length=254, null=True, blank=True)
     ticker = models.CharField(max_length=254, null=True, blank=True)
     standing = GenericRelation('eveonline.EVEStanding', null=True)
+
     def __unicode__(self):
         if self.name:
             return self.name.encode('utf-8')
         else:
             logger.warn("Alliance name missing in alliance models for id %s - needs an update - returning id as __unicode__" % self.id)
             return str(self.id).encode('utf-8')
+
     def update(self, alliance_info=None):
         logger.debug("Updating alliance info for alliance id %s" % self.id)
         if not alliance_info:
@@ -178,19 +187,41 @@ class EVEAlliance(models.Model):
         return True
 
 class EVEApiKeyPair(models.Model):
+
+    TYPE_CHOICES = (
+        ('account', 'account'),
+        ('character', 'character'),
+        ('corporation', 'corporation'),
+        )
+
     id = models.PositiveIntegerField(primary_key=True)
     vcode = models.CharField(max_length=254)
     owner = models.ForeignKey('authentication.User', null=True)
     is_valid = models.NullBooleanField(blank=True)
     characters = models.ManyToManyField(EVECharacter, related_name ='apis')
+    access_mask = models.IntegerField()
+    type = models.CharField(max_length=11, choices=TYPE_CHOICES)
+
+    class Meta:
+        permissions = (("api_verified", "Main character has valid API."),)
+
     def __unicode__(self):
         return 'API Key %s' % self.id
+
     def update(self):
         chars = []
         logger.debug("Initiating update of %s" % self)
         try:
             api = evelink.api.API(api_key=(self.id, self.vcode))
             account = evelink.account.Account(api=api)
+            update_fields = []
+            key_info = account.key_info().result
+            if key_info['type'] != self.type:
+                self.type = key_info['type']
+                update_fields.append('type')
+            if key_info['access_mask'] != self.access_mask:
+                self.access_mask = key_info['access_mask']
+                update_fields.append('access_mask')
             api_chars = account.characters().result
             for char in self.characters.all():
                 if not char.id in api_chars:
@@ -204,26 +235,36 @@ class EVEApiKeyPair(models.Model):
                     self.characters.add(char)
             if not self.is_valid:
                 self.is_valid=True
-                self.save(update_fields=['is_valid'])
-        except evelink.api.APIError as error:
-            logger.exception("APIError occured while retrieving characters for %s" % self, exc_info=True)
-            logger.info("%s is invalid." % self)
-            if self.is_valid or self.is_valid==None:
-                self.is_valid=False
-                self.save(update_fields=['is_valid'])
-            if self.characters.all().exists():
-                self.characters.clear()
+                update_fields.append('is_valid')
+            if update_fields:
+                logger.info("%s updated %s" % (self, update_fields))
+                self.save(update_fields=update_fields)
+        except evelink.api.APIError as e:
+            if e.code in [500, 520]:
+                logger.error("EVE API servers encountered an error. Unable to update %s" % self)
+            elif e.code in [221]:
+                logger.error("API hiccup prevented updating %s" % self)
+            else:
+                logger.info("%s is invalid, error code %s" % (self, e.code))
+                if self.is_valid or self.is_valid==None:
+                    self.is_valid=False
+                    self.save(update_fields=['is_valid'])
+                if self.characters.all().exists():
+                    self.characters.clear()
         
 
 class EVEStanding(models.Model):
+
     standing = models.DecimalField(max_digits=3, decimal_places=1, null=True)
     object_id = models.PositiveIntegerField()
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     content_object = GenericForeignKey('content_type', 'object_id')
     source_api = models.ForeignKey(EVEApiKeyPair, on_delete=models.CASCADE)
+
     def __unicode__(self):
         output = "%s standing towards %s" % (self.standing, self.content_object)
         return output.encode('utf-8')
+
     def assign_object(self, object):
         if isinstance(object, EVECharacter) or isinstance(object, EVECorporation) or isinstance(object, EVEAlliance):
             self.object_id = object.pk

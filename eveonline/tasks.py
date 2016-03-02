@@ -7,6 +7,8 @@ from .models import EVECharacter, EVECorporation, EVEAlliance, EVEStanding, EVEA
 from authentication.models import User
 import evelink
 import logging
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.auth.models import Permission
 
 logger = logging.getLogger(__name__)
 
@@ -148,7 +150,7 @@ def post_save_eveapikeypair(sender, instance, update_fields=[], *args, **kwargs)
 @receiver(m2m_changed, sender=EVEApiKeyPair.characters.through)
 def m2m_changed_eveapikeypair_characters(sender, instance, action, model, reverse, pk_set, *args, **kwargs):
     logger.debug("Received m2m_changed signal from %s characters with action %s" % (instance, action))
-    if action=="post_remove" or action=="post_add" or action=="post_clear" or action=="post_add":
+    if action=="post_remove" or action=="post_add" or action=="post_clear":
         chars = []
         if pk_set:
             for pk in pk_set:
@@ -162,3 +164,19 @@ def post_delete_user(sender, instance, *args, **kwargs):
     logger.debug("Received post_delete signal from user %s" % instance)
     for char in user.characters.all():
         assess_character_owner.delay(char)
+
+@receiver(m2m_changed, sender=EVECharacter.apis.through)
+def m2m_changed_evecharacter_apis(sender, instance, action, *args, **kwargs):
+    logger.debug("Received m2m_changed signal from %s with action %s" % (instance, action))
+    if action=="post_remove" or action=="post_add" or action=="post_clear":
+        perm, c = Permission.objects.get_or_create(content_type=ContentType.objects.get_for_model(EVEApiKeyPair), codename='api_verified')
+        if instance.apis.filter(is_valid=True).exists():
+            if instance.user:
+                if instance.user.has_perm('eveonline.api_verified') is False:
+                    instance.user.user_permissions.add(perm)
+                    logger.info("User %s main character is now API verified" % instance.user)
+        else:
+            if instance.user:
+                if instance.user.has_perm('eveonline.api_verified'):
+                    user.user_permissions.remove(perm)
+                    logger.info("User %s main character is no longer API verified" % instance.user)
