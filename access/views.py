@@ -47,7 +47,7 @@ def characteraccess_create(request):
                 logger.info("User %s creating access for %s" % (request.user, ca))
                 ca.save()
             else:
-                logger.warn("User %s attempting to duplicate access for %s" % character)
+                logger.warn("User %s attempting to duplicate access for %s" % (request.user, character))
             return redirect('access_list_access_rules')
     else:
         form = CharacterAccessForm()
@@ -78,7 +78,7 @@ def corpaccess_create(request):
                 logger.info("User %s creating access for %s" % (request.user, ca))
                 ca.save()
             else:
-                logger.warn("User %s attempting to duplicate access for %s" % corp)
+                logger.warn("User %s attempting to duplicate access for %s" % (request.user, corp))
             return redirect('access_list_access_rules')
     else:
         form = CorpAccessForm()
@@ -109,7 +109,7 @@ def allianceaccess_create(request):
                 logger.info("User %s creating access for %s" % (request.user, aa))
                 aa.save()
             else:
-                logger.warn("User %s attempting to duplicate access for %s" % alliance)
+                logger.warn("User %s attempting to duplicate access for %s" % (request.user, alliance))
             return redirect('access_list_access_rules')
     else:
         form = AllianceAccessForm()
