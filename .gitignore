@@ -1,6 +1,11 @@
+# settings
 adarnauth/settings.py
+
+# junk files
 *.pyc
 *.log
+
+# migrations (until release)
 eveonline/migrations/*
 authentication/migrations/*
 access/migrations/*
@@ -8,4 +13,9 @@ groupmanagement/migrations/*
 phpbb/migrations/*
 openfire/migrations/*
 services/migrations/*
-ldap/migrations/*
+ldap_service/migrations/*
+
+# virtualenv
+bin/*
+local/*
+lib/*

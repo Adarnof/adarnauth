@@ -1,6 +1,6 @@
 from django.dispatch import receiver, Signal
 import logging
-from django.db.models.signals import post_delete, post_save, m2m_changed, pre_delete
+from django.db.models.signals import post_delete, post_save, m2m_changed, pre_delete, pre_save
 from models import EVECharacter, EVECorporation, EVEAlliance, EVEStanding, EVEApiKeyPair
 from tasks import assess_character_owner, update_api_key, assess_main_char_api_verified
 from authentication.models import User
@@ -16,9 +16,25 @@ character_changed_faction = Signal(providing_args=['character'])
 character_changed_user = Signal(providing_args=['character'])
 character_blind_save = Signal(providing_args=['character'])
 
+@receiver(pre_save, sender=EVECharacter)
+def pre_save_evecharacter(sender, instance, *args, **kwargs):
+    logger.debug("Received pre_save signal from %s" % instance)
+    if EVECharacter.objects.filter(pk=instance.pk).exists():
+        old_model = EVECharacter.objects.get(pk=instance.pk)
+        if old_model.user and old_model.user != instance.user:
+            logger.debug("User is about to change for %s" % instance)
+            user = old_model.user
+            user.characters.remove(old_model)
+
+@receiver(character_changed_user)
+def character_changed_user_api_verified_check(sender, character, *args, **kwargs):
+    logger.debug("Received character_changed_user signal for %s" % character)
+    if character.user:
+        assess_main_char_api_verified(character.user)
+
 @receiver(post_save, sender=EVECharacter)
 def post_save_evecharacter_dispatcher(sender, instance, update_fields=None, *args, **kwargs):
-    logger.debug("Received post_save signal from EVECharacter %s - assessing changes." % instance)
+    logger.debug("Received post_save signal from %s - assessing changes." % instance)
     if not update_fields:
         logger.debug("EVECharacter %s saved without update_fields argument. Sending character_blind_save signal." % instance)
         character_blind_save.send(sender=sender, character=instance)
@@ -45,7 +61,9 @@ def post_save_eveapikeypair(sender, instance, update_fields=[], *args, **kwargs)
     if update_fields:
         if 'is_valid' in update_fields:
             for char in instance.characters.all():
-                assess_main_char_api_verified(char.user)
+                assess_character_owner(char)
+                if char.user:
+                    assess_main_char_api_verified(char.user)
         else:
            logger.debug("Queueing update for %s" % instance)
            update_api_key(instance)
@@ -53,7 +71,8 @@ def post_save_eveapikeypair(sender, instance, update_fields=[], *args, **kwargs)
         logger.debug("Queueing update for %s" % instance)
         update_api_key(instance)
         for char in instance.characters.all():
-            assess_main_char_api_verified(char.user)
+            if char.user:
+                assess_main_char_api_verified(char.user)
 
 @receiver(post_delete, sender=User)
 def post_delete_user(sender, instance, *args, **kwargs):
@@ -69,14 +88,21 @@ def m2m_changed_eveapikeypair_characters(sender, instance, action, model, pk_set
             for pk in pk_set:
                 char = model.objects.get(pk=pk)
                 assess_character_owner(char)
-                assess_main_char_api_verified(char.user)
+                if char.user:
+                    assess_main_char_api_verified(char.user)
         else:
             logger.warn("m2m_changed signal with action %s for %s characters does not contain an expected pk_set. Unable to assess character ownership" % (action, instance))
     elif action=="pre_clear":
-        instance.characters.remove(instance.characters.all())
+        for char in instance.characters.all():
+            instance.characters.remove(char)
 
 @receiver(post_delete, sender=EVECharacter)
 def post_delete_evecharacter(sender, instance, *args, **kwargs):
     logger.debug("Received post_delete signal from %s" % instance)
     if instance.user:
         assess_main_char_api_verified(instance.user)
+
+@receiver(pre_delete, sender=EVEApiKeyPair)
+def pre_delete_eveapikeypair(sender, instance, *args, **kwargs):
+    logger.debug("Received pre_delete signal from %s" % instance)
+    instance.characters.clear()

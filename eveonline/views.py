@@ -19,7 +19,7 @@ def api_key_add(request):
             api = EVEApiKeyPair(id=id, vcode=vcode, owner=request.user)
             logger.info("User %s creating %s" % (request.user, api))
             api.save()
-            return redirect('eveonline_character_list')
+            return redirect('auth_profile')
         else:
              logger.warn("User %s ApiAddForm failed validation." % request.user)
     else:
@@ -35,7 +35,7 @@ def api_key_delete(request, api_id):
         api.delete()
     else:
         logger.warn("User %s not eligible to delete %s" % (request.user, api))
-    return redirect('eveonline_character_list')
+    return redirect('auth_profile')
 
 @login_required
 def api_key_update(request, api_id):
@@ -46,7 +46,7 @@ def api_key_update(request, api_id):
         api.update()
     else:
         logger.warn("User %s not eligible to update %s" % (request.user, api))
-    return redirect('eveonline_character_list')
+    return redirect('auth_profile')
 
 @login_required
 def character_list(request):

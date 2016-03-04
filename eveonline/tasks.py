@@ -134,16 +134,16 @@ def assess_main_char_api_verified(user):
     if user.main_character:
         if user.main_character.apis.filter(is_valid=True).exists():
             logger.debug("User %s main character has valid APIs" % user)
-            if user.has_perm('eveonline.api_verified') is False:
+            if not perm in user.user_permissions.all():
                 logger.info("User %s main character is API verified. Assigning api_verified permission." % user)
                 user.user_permissions.add(perm)
         else:
             logger.debug("User %s main character has no valid APIs" % user)
-            if user.has_perm('eveonline.api_verified'):
+            if perm in user.user_permissions.all():
                 logger.info("User %s main character is not API verified. Removing api_verified permission." % user)
                 user.user_permissions.remove(perm)
     else:
         logger.debug("User ID %s missing main character model" % user.main_character_id)
-        if user.has_perm('eveonline.api_verified'):
+        if perm in user.user_permissions.all():
             logger.warn("User ID %s main character model missing. Unable to determine if API verified. Removing api_verified permission." % user.main_character_id)
             user.user_permissions.remove(perm)
