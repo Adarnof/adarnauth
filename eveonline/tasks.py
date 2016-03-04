@@ -1,14 +1,12 @@
 from celery.task import periodic_task
 from celery import shared_task
 from celery.task.schedules import crontab
-from django.dispatch import receiver
-from django.db.models.signals import post_delete, post_save, m2m_changed, pre_delete
 from .models import EVECharacter, EVECorporation, EVEAlliance, EVEStanding, EVEApiKeyPair
 from authentication.models import User
 import evelink
 import logging
-from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import Permission
+from django.contrib.contenttypes.models import ContentType
 
 logger = logging.getLogger(__name__)
 
@@ -129,54 +127,23 @@ def assess_character_owner(character):
                 character.user = None
                 character.save(update_fields=['user'])
 
-@receiver(pre_delete, sender=EVEApiKeyPair)
-def pre_delete_eveapikeypair(sender, instance, *args, **kwargs):
-    logger.debug("Received pre_delete signal from %s" % instance)
-    for char in instance.characters.all():
-        instance.characters.remove(char)
-        assess_character_owner.delay(char)
-
-@receiver(post_save, sender=EVEApiKeyPair)
-def post_save_eveapikeypair(sender, instance, update_fields=[], *args, **kwargs):
-    logger.debug("Received post_save signal from %s" % instance)
-    if update_fields:
-        if 'is_valid' in update_fields is False:
-           logger.debug("Queueing update for %s" % instance)
-           update_api_key.delay(instance)
-    else:
-        logger.debug("Queueing update for %s" % instance)
-        update_api_key.delay(instance)
-
-@receiver(m2m_changed, sender=EVEApiKeyPair.characters.through)
-def m2m_changed_eveapikeypair_characters(sender, instance, action, model, reverse, pk_set, *args, **kwargs):
-    logger.debug("Received m2m_changed signal from %s characters with action %s" % (instance, action))
-    if action=="post_remove" or action=="post_add" or action=="post_clear":
-        chars = []
-        if pk_set:
-            for pk in pk_set:
-                chars.append(model.objects.get(pk=pk))
-            logger.debug("%s characters changed in %s" % (len(chars), instance))
-            for char in chars:
-                assess_character_owner.delay(char)
-
-@receiver(post_delete, sender=User)
-def post_delete_user(sender, instance, *args, **kwargs):
-    logger.debug("Received post_delete signal from user %s" % instance)
-    for char in user.characters.all():
-        assess_character_owner.delay(char)
-
-@receiver(m2m_changed, sender=EVECharacter.apis.through)
-def m2m_changed_evecharacter_apis(sender, instance, action, *args, **kwargs):
-    logger.debug("Received m2m_changed signal from %s with action %s" % (instance, action))
-    if action=="post_remove" or action=="post_add" or action=="post_clear":
-        perm, c = Permission.objects.get_or_create(content_type=ContentType.objects.get_for_model(EVEApiKeyPair), codename='api_verified')
-        if instance.apis.filter(is_valid=True).exists():
-            if instance.user:
-                if instance.user.has_perm('eveonline.api_verified') is False:
-                    instance.user.user_permissions.add(perm)
-                    logger.info("User %s main character is now API verified" % instance.user)
+@shared_task
+def assess_main_char_api_verified(user):
+    logger.debug("Checking to see if user %s main character is API verified." % user)
+    perm, c = Permission.objects.get_or_create(content_type=ContentType.objects.get_for_model(EVEApiKeyPair), codename='api_verified')
+    if user.main_character:
+        if user.main_character.apis.filter(is_valid=True).exists():
+            logger.debug("User %s main character has valid APIs" % user)
+            if user.has_perm('eveonline.api_verified') is False:
+                logger.info("User %s main character is API verified. Assigning api_verified permission." % user)
+                user.user_permissions.add(perm)
         else:
-            if instance.user:
-                if instance.user.has_perm('eveonline.api_verified'):
-                    user.user_permissions.remove(perm)
-                    logger.info("User %s main character is no longer API verified" % instance.user)
+            logger.debug("User %s main character has no valid APIs" % user)
+            if user.has_perm('eveonline.api_verified'):
+                logger.info("User %s main character is not API verified. Removing api_verified permission." % user)
+                user.user_permissions.remove(perm)
+    else:
+        logger.debug("User ID %s missing main character model" % user.main_character_id)
+        if user.has_perm('eveonline.api_verified'):
+            logger.warn("User ID %s main character model missing. Unable to determine if API verified. Removing api_verified permission." % user.main_character_id)
+            user.user_permissions.remove(perm)

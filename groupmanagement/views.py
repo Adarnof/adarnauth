@@ -9,7 +9,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 @login_required
-@permission_required('useraccess.site_access')
+@permission_required('access.site_access')
 def group_list(request):
     logger.debug("group_list_view called by user %s" % request.user)
     applications = GroupApplication.objects.get_open().filter(user=request.user)
@@ -81,7 +81,7 @@ def group_application_create(request, group_id):
 @permission_required('access.site_access')
 @permission_required('groupmanagement.can_manage_groups')
 def group_application_accept(request, app_id):
-    logger.debug("group_application_accept called by user %s for app id %s" % (request.user, group_id))
+    logger.debug("group_application_accept called by user %s for app id %s" % (request.user, app_id))
     app = get_object_or_404(GroupApplication, id=app_id)
     if app.extended_group.owner == request.user or request.user in app.extended_group.admins.all():
         logger.info("User %s accepting %s" % (request.user, app))
@@ -94,7 +94,7 @@ def group_application_accept(request, app_id):
 @permission_required('access.site_access')
 @permission_required('groupmanagement.can_manage_groups')
 def group_application_reject(request, app_id):
-    logger.debug("group_application_reject called by user %s for app_id %s" % (request.user, group_id))
+    logger.debug("group_application_reject called by user %s for app_id %s" % (request.user, app_id))
     app = get_object_or_404(GroupApplication, id=app_id)
     if app.extended_group.owner == request.user or request.user in app.extended_group.admins.all():
         logger.info("User %s rejecting %s" % (request.user, app))

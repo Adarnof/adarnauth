@@ -6,4 +6,3 @@ class EveonlineConfig(AppConfig):
 
     def ready(self):
         import eveonline.signals
-        import eveonline.tasks

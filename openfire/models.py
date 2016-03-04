@@ -167,7 +167,7 @@ class OpenfireGroup(models.Model):
 
 class OpenfireUser(models.Model):
     service = models.ForeignKey(OpenfireService, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, editable=False)
     username = models.CharField(max_length=254)
     openfire_groups = models.ManyToManyField(OpenfireGroup, blank=True)
 

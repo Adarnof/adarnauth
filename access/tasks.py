@@ -89,7 +89,7 @@ def generate_useraccess_by_characteraccess(ca):
             ua.set_rule(ca)
             ua.save()
     else:
-        logger.warn("No user set for character %s. Unable to apply CharacterAccess %s" % (char, ca))
+        logger.debug("No user set for character %s. Unable to apply CharacterAccess %s" % (char, ca))
 
 @shared_task
 def generate_useraccess_by_corpaccess(ca):
@@ -165,7 +165,7 @@ def generate_useraccess_by_allianceaccess(aa):
 def post_delete_useraccess(sender, instance, *args, **kwargs):
     if instance.user:
         logger.debug("Received post_delete signal from UserAccess models %s. Triggering assessment of user %s access rights." % (instance, instance.user))
-        assess_access.delay(instance.user)
+        assess_access(instance.user)
     else:
         logger.debug("Received post_delete signal from UserAccess model %s. No affiliated user found. Ignoring." % instance)
 
@@ -180,7 +180,7 @@ def useraccess_check_on_character_changed_corp(sender, character, *args, **kwarg
             u.delete()
     if character.user:
         logger.debug("Assigning new access rights to character %s owner %s" % (character, character.user))
-        assign_access.delay(character.user)
+        assign_access(character.user)
     else:
         logger.debug("Character %s does not have a user. Not assiging access." % character)
 
@@ -194,7 +194,7 @@ def useraccess_check_on_character_changed_alliance(sender, character, *args, **k
             logger.info("Character %s new alliance does not apply to allianceaccess rule %s - deleting useraccess." % (character, u.access_rule))
     if character.user:
         logger.debug("Assigning new access rights to character %s owner %s" % (character, character.user))
-        assign_access.delay(character.user)
+        assign_access(character.user)
     else:
         logger.debug("Character %s does not have a user. Not assiging access." % character)
 
@@ -208,7 +208,7 @@ def useraccess_check_on_character_changed_user(sender, character, *args, **kwarg
             u.delete()
     if character.user:
         logger.debug("Assigning new access rights to character %s owner %s" % (character, character.user))
-        assign_access.delay(character.user)
+        assign_access(character.user)
     else:
         logger.debug("Character %s does not have a user. Not assiging access." % character)
 
@@ -266,21 +266,22 @@ def post_save_useraccess(sender, instance, *args, **kwargs):
         if instance.access_rule.alliance.id != instance.character.alliance_id:
             logger.info("Useraccess %s character does not match allianceaccess rule. Deleting" % instance)
             instance.delete()
+    assess_access(instance.user)
 
 @receiver(post_save, sender=CharacterAccessRule)
 def post_save_characteraccess(sender, instance, *args, **kwargs):
     logger.debug("Received post_save signal from characteraccess %s" % instance)
-    generate_useraccess_by_characteraccess.delay(instance)
+    generate_useraccess_by_characteraccess(instance)
 
 @receiver(post_save, sender=CorpAccessRule)
 def post_save_corpaccess(sender, instance, *args, **kwargs):
     logger.debug("Received post_save signal from corpaccess %s" % instance)
-    generate_useraccess_by_corpaccess.delay(instance)
+    generate_useraccess_by_corpaccess(instance)
 
 @receiver(post_save, sender=AllianceAccessRule)
 def post_save_allianceaccess(sender, instance, *args, **kwargs):
     logger.debug("Received post_save signal from allianceaccess %s" % instance)
-    generate_useraccess_by_allianceaccess.delay(instance)
+    generate_useraccess_by_allianceaccess(instance)
 
 @receiver(user_created)
 def post_user_created(sender, user, *args, **kwargs):

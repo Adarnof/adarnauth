@@ -191,16 +191,17 @@ class EVEApiKeyPair(models.Model):
     TYPE_CHOICES = (
         ('account', 'account'),
         ('character', 'character'),
-        ('corporation', 'corporation'),
+        ('corp', 'corp'),
         )
 
     id = models.PositiveIntegerField(primary_key=True)
     vcode = models.CharField(max_length=254)
     owner = models.ForeignKey('authentication.User', null=True)
     is_valid = models.NullBooleanField(blank=True)
-    characters = models.ManyToManyField(EVECharacter, related_name ='apis')
-    access_mask = models.IntegerField()
-    type = models.CharField(max_length=11, choices=TYPE_CHOICES)
+    access_mask = models.IntegerField(default=0)
+    type = models.CharField(max_length=11, choices=TYPE_CHOICES, blank=True)
+    characters = models.ManyToManyField(EVECharacter, blank=True, related_name='apis')
+    corp = models.ForeignKey(EVECorporation, null=True, blank=True, related_name='apis')
 
     class Meta:
         permissions = (("api_verified", "Main character has valid API."),)
@@ -233,6 +234,17 @@ class EVEApiKeyPair(models.Model):
                 if not char in self.characters.all():
                     logger.info("Character %s discovered on %s" % (char, self))
                     self.characters.add(char)
+            if self.type == 'corp':
+                api_corp = account.corp().result
+                corp, c = EVECorporation.objects.get_or_create(id=api_corp['id'])
+                corp.update(api_corp[corp.id])
+                if self.corp != corp:
+                    self.corp = corp
+                    update_fields.append('corp')
+            else:
+                if self.corp:
+                    self.corp = None
+                    update_fields.append('corp')
             if not self.is_valid:
                 self.is_valid=True
                 update_fields.append('is_valid')
@@ -246,12 +258,19 @@ class EVEApiKeyPair(models.Model):
                 logger.error("API hiccup prevented updating %s" % self)
             else:
                 logger.info("%s is invalid, error code %s" % (self, e.code))
+                update_fields = []
                 if self.is_valid or self.is_valid==None:
                     self.is_valid=False
-                    self.save(update_fields=['is_valid'])
+                    update_fields.append('is_valid')
                 if self.characters.all().exists():
-                    self.characters.clear()
-        
+                    for char in self.characters:
+                        self.characters.remove(char)
+                if self.corp:
+                    self.corp = None
+                    update_fields.append('corp')
+                if update_fields:
+                    logger.info("%s updated %s" % (self, update_fields))
+                    self.save(update_fields=update_fields)
 
 class EVEStanding(models.Model):
 

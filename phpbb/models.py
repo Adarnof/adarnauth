@@ -340,7 +340,7 @@ class Phpbb3Group(models.Model):
 
 class Phpbb3User(models.Model):
     service = models.ForeignKey(Phpbb3Service, on_delete=models.CASCADE, editable=False)
-    user = models.OneToOneField(User, on_delete=models.CASCADE, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, editable=False)
     phpbb_user_id = models.PositiveIntegerField(editable=False)
     phpbb_username = models.CharField(max_length=254, editable=False)
     phpbb_groups = models.ManyToManyField(Phpbb3Group, blank=True)
