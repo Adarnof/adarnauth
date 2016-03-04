@@ -57,13 +57,10 @@
                             <h5>Main Navigation</h5>
                         </li>
                         {% if user.is_authenticated %}
+                            {% url 'auth_profile' as profile_url %}
                             <li>
-                                <a class="active" href="{% url 'auth_dashboard' %}"><i
-                                        class="fa fa-dashboard fa-fw grayiconecolor"></i> Dashboard</a>
-                            </li>
-                            <li>
-                                <a class="active" href="{% url 'eveonline_character_list' %}"><i
-                                        class="fa fa-group fa-fw grayiconecolor"></i> Characters</a>
+                                <a {% ifequal request.path profile_url %}class="active"{% endifequal %} href="{% url 'auth_profile' %}"><i
+                                        class="fa fa-dashboard fa-fw grayiconecolor"></i> Profile</a>
                             </li>
                             <li>
                                 <a class="active" href="{% url 'access_list_useraccess' %}">
@@ -71,7 +68,7 @@
                             </li>
                             <li>
                                 <a {% if perms.access.site_access %} class="active" href="{% url 'groupmanagement_group_list' %}" {% else %} href="" {% endif %}>
-                                    <i class="fa fa-sitemap grayiconecolor"></i> Groups</a>
+                                    <i class="fa fa-group grayiconecolor"></i> Groups</a>
                             </li>
                             <li class="text-center divider-horizontal">
                                 <h5>Settings</h5>
@@ -82,7 +79,7 @@
                             </li>
                             <li>
                                 <a {% if perms.groupmanagement.can_manage_groups %} class="active" href="{% url 'groupmanagement_group_list_management' %}" {% else %} href="" {% endif %}>
-                                    <i class="fa fa-sitemap grayiconecolor"></i> Group Management</a>
+                                    <i class="fa fa-group grayiconecolor"></i> Group Management</a>
                             </li>
                         {% endif %}
                     </ul>

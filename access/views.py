@@ -156,4 +156,10 @@ def recheck_access(request, ua_id):
     logger.debug("recheck_access called by user %s for useraccess id %s" % (request.user, ua_id))
     ua = get_object_or_404(UserAccess, id=ua_id)
     ua.verify()
+    if isinstance(ua.get_rule(), CharacterAccessRule):
+        return redirect('access_view_character_access', ua.get_rule().pk)
+    elif isinstance(ua.get_rule(), CorpAccessRule):
+        return redirect('access_view_corp_access', ua.get_rule().pk)
+    elif isinstance(ua.get_rule(), AllianceAccessRule):
+        return redirect('access_view_alliance_access', ua.get_rule().pk)
     return redirect('access_list_access_rules')

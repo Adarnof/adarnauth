@@ -26,11 +26,10 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
 
     # authentication
-    url(r'^$', authentication.views.landing_view, name='auth_landing'),
+    url(r'^$', eveonline.views.character_list, name='auth_profile'),
     url(r'^login/$', authentication.views.login_view, name='auth_login_user'),
     url(r'^logout/$', authentication.views.logout_view, name='auth_logout_user'),
     url(r'^callback/$', authentication.views.sso_login),
-    url(r'^dashboard/$', authentication.views.dashboard_view, name='auth_dashboard'),
 
     # groupmanagement
     url(r'^groups/$', groupmanagement.views.group_list, name='groupmanagement_group_list'),
@@ -64,7 +63,6 @@ urlpatterns = [
     url(r'^access/rules/alliance/([0-9]*)/view/$', access.views.view_alliance_access, name='access_view_alliance_access'),
 
     # eveonline
-    url(r'^characters/$', eveonline.views.character_list, name='eveonline_character_list'),
     url(r'^characters/api/add/$', eveonline.views.api_key_add, name='eveonline_api_key_add'),
     url(r'^characters/api/([0-9]*)/delete/$', eveonline.views.api_key_delete, name='eveonline_api_key_delete'),
     url(r'^characters/api/([0-9]*)/update/$', eveonline.views.api_key_update, name='eveonline_api_key_update'),

@@ -29,9 +29,7 @@
                           </td>
                           <td class="text-right">
                               {% if g.1 %}
-                                  <a href="{% url 'groupmanagement_group_leave' g.0.id %}">
-                                      <button type="button" class="btn btn-danger" title="Leave"><span class="glyphicon glyphicon-share-alt"><span></button>
-                                  </a>
+                                  <a href="{% url 'groupmanagement_group_leave' g.0.id %}"><button type="button" class="btn btn-danger" title="Leave"><span class="glyphicon glyphicon-share-alt"><span></button></a>
                               {% endif %}
                           </td>
                       </tr>
@@ -55,9 +53,7 @@
                         <td class="text-center">{{ a.extended_group.name }}</td>
                         <td class="text-center">{{ a.extended_group.description }}</td>
                         <td class="text-right">
-                            <a href="{% url 'groupmanagement_group_application_delete' a.id %}">
-                                <button type="button" class="btn btn-danger" title="Cancel"><span class="glyphicon glyphicon-remove"><span></button>
-                            </a>
+                            <a href="{% url 'groupmanagement_group_application_delete' a.id %}"><button type="button" class="btn btn-danger" title="Cancel"><span class="glyphicon glyphicon-remove"><span></button></a>
                         </td>
                     </tr>
                  {% endfor %}

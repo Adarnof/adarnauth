@@ -15,11 +15,7 @@
                             {% if perms.access.add_characteraccessrule %}
                                 <td>
                                     <div class="text-right">
-                                        <a href="{% url 'access_characteraccess_create' %}">
-                                            <button type="button" class="btn btn-success" title="Add">
-                                                <span class="glyphicon glyphicon-plus"></span>
-                                            </button>
-                                        </a>
+                                        <a href="{% url 'access_characteraccess_create' %}"><button type="button" class="btn btn-success" title="Add"><span class="glyphicon glyphicon-plus"></span></button></a>
                                     </div>
                                 </td>
                             {% endif %}
@@ -30,18 +26,10 @@
                                 <td class="text-center">{{ ca.character }}</td>
                                 <td class="text-right">
                                     {% if perms.access.audit_access %}
-                                        <a href="{% url 'access_view_character_access' ca.id %}">
-                                            <button type="button" class="btn btn-primary" title="View">
-                                                <span class="glyphicon glyphicon-user"></span>
-                                            </button>
-                                        </a>
+                                        <a href="{% url 'access_view_character_access' ca.id %}"><button type="button" class="btn btn-primary" title="View"><span class="glyphicon glyphicon-user"></span></button></a>
                                     {% endif %}
                                     {% if perms.access.delete_characteraccessrule %}
-                                        <a href="{% url 'access_characteraccess_delete' ca.id %}">
-                                            <button type="button" class="btn btn-danger" title="Revoke">
-                                                <span class="glyphicon glyphicon-remove"></span>
-                                            </button>
-                                        </a>
+                                        <a href="{% url 'access_characteraccess_delete' ca.id %}"><button type="button" class="btn btn-danger" title="Revoke"><span class="glyphicon glyphicon-remove"></span></button></a>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -59,11 +47,7 @@
                             {% if perms.access.add_corpaccessrule %}
                                 <td>
                                     <div class="text-right">
-                                        <a href="{% url 'access_corpaccess_create' %}">
-                                            <button type="button" class="btn btn-success" title="Add">
-                                                <span class="glyphicon glyphicon-plus"></span>
-                                            </button>
-                                        </a>
+                                        <a href="{% url 'access_corpaccess_create' %}"><button type="button" class="btn btn-success" title="Add"><span class="glyphicon glyphicon-plus"></span></button></a>
                                     </div>
                                 </td>
                             {% endif %}
@@ -74,18 +58,10 @@
                                 <td class="text-center">{{ ca.corp }}</td>
                                 <td class="text-right">
                                     {% if perms.access.audit_access %}
-                                        <a href="{% url 'access_view_corp_access' ca.id %}">
-                                            <button type="button" class="btn btn-primary" title="View">
-                                                <span class="glyphicon glyphicon-user"></span>
-                                            </button>
-                                        </a>
+                                        <a href="{% url 'access_view_corp_access' ca.id %}"><button type="button" class="btn btn-primary" title="View"><span class="glyphicon glyphicon-user"></span></button></a>
                                     {% endif %}
                                     {% if perms.access.delete_corpaccessrule %}
-                                        <a href="{% url 'access_corpaccess_delete' ca.id %}">
-                                            <button type="button" class="btn btn-danger" title="Revoke">
-                                                <span class="glyphicon glyphicon-remove"></span>
-                                            </button>
-                                        </a>
+                                        <a href="{% url 'access_corpaccess_delete' ca.id %}"><button type="button" class="btn btn-danger" title="Revoke"><span class="glyphicon glyphicon-remove"></span></button></a>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -103,11 +79,7 @@
                             {% if perms.access.add_allianceaccessrule %}
                                 <td>
                                     <div class="text-right">
-                                        <a href="{% url 'access_allianceaccess_create' %}">
-                                            <button type="button" class="btn btn-success" title="Add">
-                                                <span class="glyphicon glyphicon-plus"></span>
-                                            </button>
-                                        </a>
+                                        <a href="{% url 'access_allianceaccess_create' %}"><button type="button" class="btn btn-success" title="Add"><span class="glyphicon glyphicon-plus"></span></button></a>
                                     </div>
                                 </td>
                             {% endif %}
@@ -118,18 +90,10 @@
                                 <td class="text-center">{{ aa.alliance }}</td>
                                 <td class="text-right">
                                     {% if perms.access.audit_access %}
-                                        <a href="{% url 'access_view_alliance_access' aa.id %}">
-                                            <button type="button" class="btn btn-primary" title="View">
-                                                <span class="glyphicon glyphicon-user"></span>
-                                            </button>
-                                        </a>
+                                        <a href="{% url 'access_view_alliance_access' aa.id %}"><button type="button" class="btn btn-primary" title="View"><span class="glyphicon glyphicon-user"></span></button></a>
                                     {% endif %}
                                     {% if perms.access.delete_allianceaccessrule %}
-                                        <a href="{% url 'access_allianceaccess_delete' aa.id %}">
-                                            <button type="button" class="btn btn-danger" title="Revoke">
-                                                <span class="glyphicon glyphicon-remove"></span>
-                                            </button>
-                                        </a>
+                                        <a href="{% url 'access_allianceaccess_delete' aa.id %}"><button type="button" class="btn btn-danger" title="Revoke"><span class="glyphicon glyphicon-remove"></span></button></a>
                                     {% endif %}
                                 </td>
                             </tr>

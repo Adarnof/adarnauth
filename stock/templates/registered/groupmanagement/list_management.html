@@ -14,6 +14,7 @@
                 <th class="text-center">Description</th>
                 <th class="text-center">Applications</th>
                 <th class="text-center">Visibility</th>
+                <th class="text-center">Members</th>
                 <th class="text-right">
                     {% if perms.groupmanagement.add_extendedgroup %}
                         <div class="text-right">
@@ -41,6 +42,7 @@
                                 <span class="glyphicon glyphicon-eye-open"></span>
                             {% endif %}
                         </td>
+                        <td class="text-center">{{ g.group.user_set.count }}</td>
                         <td class="text-right">
                             <a href="{% url 'groupmanagement_group_manage' g.id %}"><button type="button" class="btn btn-primary" title="Manage Members"><span class="glyphicon glyphicon-user"></span></button></a>
                             {% if perms.groupmanagement.change_extendedgroup %}
@@ -67,6 +69,7 @@
                 <th class="text-center">Owner</th>
                 <th class="text-center">Applications</th>
                 <th class="text-center">Visibility</th>
+                <th class="text-center">Members</th>
                 <th class="text-center"></th>
             </tr>
             {% if admin %}
@@ -89,10 +92,9 @@
                                 <span class="glyphicon glyphicon-eye-open"></span>
                             {% endif %}
                         </td>
+                        <td class="text-center">{{ g.group.user_set.count }}</td>
                         <td class="text-right">
-                            <a href="{% url 'groupmanagement_group_manage' g.id %}">
-                                <button type="button" class="btn btn-primary" title="Manage Members"><span class="glyphicon glyphicon-user"><span></button>
-                            </a>
+                            <a href="{% url 'groupmanagement_group_manage' g.id %}"><button type="button" class="btn btn-primary" title="Manage Members"><span class="glyphicon glyphicon-user"><span></button></a>
                         </td>
                     </tr>
                 {% endfor %}

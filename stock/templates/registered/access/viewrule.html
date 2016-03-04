@@ -19,11 +19,7 @@
                         <td class="text-center">{{ ua.user }}</td>
                         <td class="text-center">{{ ua }}</td>
                         <td class="text-right">
-                            <a href="{% url 'access_recheck_useraccess' ua.id %}">
-                                <button type="button" class="btn btn-primary">
-                                    <span class="glyphicon glyphicon-refresh"></span>
-                                </button>
-                            </a>
+                            <a href="{% url 'access_recheck_useraccess' ua.id %}"><button type="button" class="btn btn-primary"><span class="glyphicon glyphicon-refresh"></span></button></a>
                         </td>
                     </tr>
                 {% endfor %}
