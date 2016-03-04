@@ -9,13 +9,17 @@ import logging
 logger = logging.getLogger(__name__)
 
 @login_required
-def list_useraccess(request):
-    logger.debug("list_access called by user %s" % request.user)
-    ua = UserAccess.objects.filter(user=request.user)
-    access = request.user.has_perm('access.site_access')
-    return render(request, 'registered/access/useraccess.html', context={'useraccess':ua, 'access':access})
+@permission_required('access.site_access')
+@permission_required('access.audit_access')
+def list_useraccess(request, user_id):
+    logger.debug("list_access called by user %s for user_id %s" % (request.user, user_id))
+    user = get_object_or_404(User, pk=user_id)
+    ua = UserAccess.objects.filter(user=user)
+    access = user.has_perm('access.site_access')
+    return render(request, 'registered/access/useraccess.html', context={'useraccess':ua, 'user':user, 'access':access})
 
 @login_required
+@permission_required('access.site_access')
 def list_access_rules(request):
     logger.debug("list_access_rules called by user %s" % request.user)
     characcess = CharacterAccessRule.objects.all()

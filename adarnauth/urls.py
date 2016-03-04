@@ -26,7 +26,7 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
 
     # authentication
-    url(r'^$', eveonline.views.character_list, name='auth_profile'),
+    url(r'^$', authentication.views.profile_view, name='auth_profile'),
     url(r'^login/$', authentication.views.login_view, name='auth_login_user'),
     url(r'^logout/$', authentication.views.logout_view, name='auth_logout_user'),
     url(r'^callback/$', authentication.views.sso_login),
@@ -49,7 +49,7 @@ urlpatterns = [
     url(r'^groups/applications/([0-9]*)/delete/$', groupmanagement.views.group_application_delete, name='groupmanagement_group_application_delete'),
 
     # access
-    url(r'^access/$', access.views.list_useraccess, name='access_list_useraccess'),
+    url(r'^access/user/([0-9]*)/$', access.views.list_useraccess, name='access_list_useraccess'),
     url(r'^access/([0-9]*)/recheck/$', access.views.recheck_access, name='access_recheck_useraccess'),
     url(r'^access/rules/$', access.views.list_access_rules, name='access_list_access_rules'),
     url(r'^access/rules/character/add/$', access.views.characteraccess_create, name='access_characteraccess_create'),

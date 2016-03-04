@@ -60,11 +60,7 @@
                             {% url 'auth_profile' as profile_url %}
                             <li>
                                 <a {% ifequal request.path profile_url %}class="active"{% endifequal %} href="{% url 'auth_profile' %}"><i
-                                        class="fa fa-dashboard fa-fw grayiconecolor"></i> Profile</a>
-                            </li>
-                            <li>
-                                <a class="active" href="{% url 'access_list_useraccess' %}">
-                                    <i class="fa fa-check-square grayiconecolor"></i> Access Summary</a>
+                                        class="fa fa-user fa-fw grayiconecolor"></i> Profile</a>
                             </li>
                             <li>
                                 <a {% if perms.access.site_access %} class="active" href="{% url 'groupmanagement_group_list' %}" {% else %} href="" {% endif %}>
