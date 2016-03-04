@@ -19,3 +19,5 @@ ldap_service/migrations/*
 bin/*
 local/*
 lib/*
+include/*
+pip-selfcheck.json
