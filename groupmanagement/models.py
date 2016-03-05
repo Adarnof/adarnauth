@@ -3,7 +3,9 @@ from django.contrib.auth.models import Group
 from authentication.models import User
 from django.utils import timezone
 from django.db import models
-from .managers import GroupApplicationManager
+from managers import GroupApplicationManager
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.models import ContentType
 
 class ExtendedGroup(models.Model):
     group = models.OneToOneField(Group, on_delete=models.CASCADE)
@@ -52,3 +54,20 @@ class GroupApplication(models.Model):
         return self.extended_group.group
 
     objects = GroupApplicationManager()
+
+class AutoGroup(models.Model):
+    group = models.OneToOneField(Group, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    access_rule = GenericForeignKey('content_type', 'object_id')
+
+    def __unicode__(self):
+        output = "AutoGroup %s for %s" % (self.group, self.access_rule)
+        return output.encode('utf-8')
+
+    def set_rule(self, object):
+        self.object_id = object.pk
+        self.access_rule = object
+
+    class Meta:
+        unique_together = ('content_type', 'object_id')

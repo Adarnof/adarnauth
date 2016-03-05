@@ -34,6 +34,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def get_short_name(self):
         return str(self.main_character_id)
+    def get_full_name(self):
+        return str(self)
 
     def __unicode__(self):
         if self.main_character:

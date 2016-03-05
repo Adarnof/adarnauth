@@ -1,10 +1,12 @@
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver, Signal
-from .models import ExtendedGroup, GroupApplication
+from models import ExtendedGroup, GroupApplication, AutoGroup
 import logging
 from access.signals import user_loses_access
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import Permission
+from tasks import assign_auto_group, assign_user_auto_group
+from access.models import UserAccess
 
 logger = logging.getLogger(__name__)
 
@@ -66,3 +68,28 @@ def group_validation_on_user_loses_access(sender, user, *args, **kwargs):
         g.admins.remove(user)
     logger.info("Removing all groups from user %s as user has lost access." % user)
     user.groups.clear()
+
+@receiver(post_save, sender=AutoGroup)
+def post_save_autogroup(sender, instance, *args, **kwargs):
+    logger.debug("Received post_save signal from %s" % instance)
+    assign_auto_group(instance)
+
+@receiver(post_delete, sender=AutoGroup)
+def post_delete_autogroup(sender, instance, *args, **kwargs):
+    logger.debug("Received post_delete signal from %s" % instance)
+    logger.info("Cascading %s deletion to base group %s" % (instance, instance.group))
+    instance.group.delete()
+
+@receiver(post_save, sender=UserAccess)
+def post_save_useraccess(sender, instance, *args, **kwargs):
+    logger.debug("Received post_save signal from %s" % instance)
+    if AutoGroup.objects.filter(content_type=instance.content_type).filter(object_id=instance.object_id).exists():
+        for ag in AutoGroup.objects.filter(content_type=instance.content_type).filter(object_id=instance.object_id):
+            assign_user_auto_group(instance.user, ag)
+
+@receiver(post_delete, sender=UserAccess)
+def post_delete_useraccess(sender, instance, *args, **kwargs):
+    logger.debug("Received post_delete signal from %s" % instance)
+    if AutoGroup.objects.filter(content_type=instance.content_type).filter(object_id=instance.object_id).exists():
+        for ag in AutoGroup.objects.filter(content_type=instance.content_type).filter(object_id=instance.object_id):
+            assign_user_auto_group(instance.user, ag)

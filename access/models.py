@@ -38,6 +38,7 @@ class CorpAccessRule(models.Model):
 
     corp = models.OneToOneField(EVECorporation, models.CASCADE)
     access = GenericRelation(UserAccess)
+    auto_group = GenericRelation('groupmanagement.AutoGroup')
 
     def __unicode__(self):
         output = 'corp %s' % self.corp
@@ -47,6 +48,7 @@ class AllianceAccessRule(models.Model):
 
     alliance = models.OneToOneField(EVEAlliance, models.CASCADE)
     access = GenericRelation(UserAccess)
+    auto_group = GenericRelation('groupmanagement.AutoGroup')
 
     def __unicode__(self):
         output = 'alliance %s' % self.alliance
@@ -56,6 +58,7 @@ class CharacterAccessRule(models.Model):
 
     character = models.OneToOneField(EVECharacter, models.CASCADE)
     access = GenericRelation(UserAccess)
+    auto_group = GenericRelation('groupmanagement.AutoGroup')
 
     def __unicode__(self):
         output = 'character %s' % self.character
