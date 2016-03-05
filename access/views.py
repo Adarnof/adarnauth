@@ -20,6 +20,7 @@ def list_useraccess(request, user_id):
 
 @login_required
 @permission_required('access.site_access')
+@permission_required('access.manage_access')
 def list_access_rules(request):
     logger.debug("list_access_rules called by user %s" % request.user)
     characcess = CharacterAccessRule.objects.all()

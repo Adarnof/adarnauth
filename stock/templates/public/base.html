@@ -59,24 +59,33 @@
                         {% if user.is_authenticated %}
                             {% url 'auth_profile' as profile_url %}
                             <li>
-                                <a {% ifequal request.path profile_url %}class="active"{% endifequal %} href="{% url 'auth_profile' %}"><i
-                                        class="fa fa-user fa-fw grayiconecolor"></i> Profile</a>
+                                <a {% ifequal request.path profile_url %}class="active"{% endifequal %} href="{% url 'auth_profile' %}">
+                                    <i class="fa fa-user fa-fw grayiconecolor"></i> Profile</a>
                             </li>
-                            <li>
-                                <a {% if perms.access.site_access %} class="active" href="{% url 'groupmanagement_group_list' %}" {% else %} href="" {% endif %}>
-                                    <i class="fa fa-group grayiconecolor"></i> Groups</a>
-                            </li>
-                            <li class="text-center divider-horizontal">
-                                <h5>Settings</h5>
-                            </li>
-                            <li>
-                                <a {% if perms.access.audit_access %} class="active" href="{% url 'access_list_access_rules' %}" {% else %} href="" {% endif %}>
-                                    <i class="fa fa-check-square grayiconecolor"></i> Access Rules</a>
-                            </li>
-                            <li>
-                                <a {% if perms.groupmanagement.can_manage_groups %} class="active" href="{% url 'groupmanagement_group_list_management' %}" {% else %} href="" {% endif %}>
-                                    <i class="fa fa-group grayiconecolor"></i> Group Management</a>
-                            </li>
+                            {% if perms.access.site_access %}
+                                {% url 'groupmanagement_group_list' as group_list_url %}
+                                <li>
+                                    <a {% ifequal request.path group_list_url %}class="active"{% endifequal %} href="{% url 'groupmanagement_group_list' %}">
+                                        <i class="fa fa-group grayiconecolor"></i> Groups</a>
+                                </li>
+                                <li class="text-center divider-horizontal">
+                                    <h5>Settings</h5>
+                                </li>
+                                {% if perms.access.manage_access %}
+                                    {% url 'access_list_access_rules' as access_list_url %}
+                                    <li>
+                                        <a {% ifequal request.path access_list_url %}class="active"{% endifequal %} href="{% url 'access_list_access_rules' %}">
+                                            <i class="fa fa-check-square grayiconecolor"></i> Access Rules</a>
+                                    </li>
+                                {% endif %}
+                                {% if perms.groupmanagement.can_manage_groups %}
+                                    {% url 'groupmanagement_group_list_management' as group_manage_list_url %}
+                                    <li>
+                                        <a {% ifequal request.path group_manage_list_url %}class="active"{% endifequal %} href="{% url 'groupmanagement_group_list_management' %}">
+                                            <i class="fa fa-group grayiconecolor"></i> Group Management</a>
+                                    </li>
+                                {% endif %}
+                            {% endif %}
                         {% endif %}
                     </ul>
                 </div>
