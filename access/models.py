@@ -20,6 +20,7 @@ class UserAccess(models.Model):
 
     class Meta:
         permissions = (("site_access", "User has access to site."), ("manage_access", "User can manage site access."), ("audit_access", "User can view access granted per rule."))
+        unique_together = ('object_id', 'content_type', 'user')
 
     def set_rule(self, object):
         if isinstance(object, CharacterAccessRule) or isinstance(object, CorpAccessRule) or isinstance(object, AllianceAccessRule) or isinstance(object, StandingAccessRule):

@@ -1,0 +1,21 @@
+{% extends "public/base.html" %}
+{% load staticfiles %}
+
+{% block title %}Auto Group Members{% endblock %}
+
+{% block content %}
+    <div class="col-lg-12">
+        <h1 class="page-header text-center">{{ group.name }}</h1>
+        <div class="panel panel-primary">
+            <div class="panel-heading">Members</div>
+            <table class="table">
+                {% for u in users %}
+                    <tr>
+                        <td class="text-center">{{ u }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+{% endblock %}
+

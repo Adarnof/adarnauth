@@ -7,14 +7,14 @@
     <div class="col-lg-12">
         <h1 class="page-header text-center">Groups</h1>
         <div class="panel panel-success">
-        <div class="panel-heading">Your Groups</div>
-        <table class="table">
-            <tr>
-                <th class="text-center">Name</th>
-                <th class="text-center">Description</th>
-                <th class="text-center">Visibility</th>
-                <th class="text-center"></th>
-            </tr>
+            <div class="panel-heading">Your Groups</div>
+            <table class="table">
+                <tr>
+                    <th class="text-center">Name</th>
+                    <th class="text-center">Description</th>
+                    <th class="text-center">Visibility</th>
+                    <th class="text-center"></th>
+                </tr>
             {% if member %}
                 {% for g in member %}
                     <tr>
@@ -37,6 +37,23 @@
             {% endif %}
         </table>
         </div>
+        {% if auto %}
+            <div class="panel panel-info">
+                <div class="panel-heading">Auto Groups</div>
+                <table class="table">
+                    <tr>
+                        <th class="text-center">Name</th>
+                        <th class="text-center">Access Rule</th>
+                    </tr>
+                    {% for ag in auto %}
+                        <tr>
+                            <td class="text-center">{{ ag.group.name }}</td>
+                            <td class="text-center">{{ ag.access_rule }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        {% endif %}
         {% if applications %}
             <div class="panel panel-warning">
             <div class="panel-heading">Applications</div>

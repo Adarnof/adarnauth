@@ -101,5 +101,34 @@
             {% endif %}
         </table>
         </div>
+        <div class="panel panel-info">
+        <div class="panel-heading">Auto Groups</div>
+        <table class="table">
+            <tr>
+                <th class="text-center">Name</th>
+                <th class="text-center">Access Rule</th>
+                <th class="text-center">Member Count</th>
+                <th class="text-right">
+                    {% if perms.groupmanagement.add_autogroup %}
+                        <a href="{% url 'groupmanagement_auto_group_add'%}"><button type="button" class="btn btn-success" title="Add Auto Group"><span class="glyphicon glyphicon-plus"><span></button></a>
+                    {% endif %}
+                </th>
+            </tr>
+            {% if auto %}
+                {% for ag in auto %}
+                    <tr>
+                        <td class="text-center">{{ ag.group.name }}</td>
+                        <td class="text-center">{{ ag.access_rule }}</td>
+                        <td class="text-center">{{ ag.group.user_set.count }}</td>
+                        <td class="text-right">
+                            <a href="{% url 'groupmanagement_auto_group_view' ag.id %}"><button type="button" class="btn btn-primary" title="View Members"><span class="glyphicon glyphicon-user"><span></button></a>
+                            {% if perms.groupmanagement.delete_autogroup %}
+                                <a href="{% url 'groupmanagement_auto_group_delete' ag.id %}"><button type="button" class="btn btn-danger" title="Delete"><span class="glyphicon glyphicon-trash"><span></button></a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            {% endif %}
+        </table>
     </div>
 {% endblock %}

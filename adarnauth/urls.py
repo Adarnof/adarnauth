@@ -47,6 +47,9 @@ urlpatterns = [
     url(r'^groups/applications/([0-9]*)/accept/$', groupmanagement.views.group_application_accept, name='groupmanagement_group_application_accept'),
     url(r'^groups/applications/([0-9]*)/reject/$', groupmanagement.views.group_application_reject, name='groupmanagement_group_application_reject'),
     url(r'^groups/applications/([0-9]*)/delete/$', groupmanagement.views.group_application_delete, name='groupmanagement_group_application_delete'),
+    url(r'^groups/auto/add/$', groupmanagement.views.auto_group_add, name='groupmanagement_auto_group_add'),
+    url(r'^groups/auto/([0-9]*)/view/$', groupmanagement.views.auto_group_view, name='groupmanagement_auto_group_view'),
+    url(r'^groups/auto/([0-9]*)/delete/$', groupmanagement.views.auto_group_delete, name='groupmanagement_auto_group_delete'),
 
     # access
     url(r'^access/user/([0-9]*)/$', access.views.list_useraccess, name='access_list_useraccess'),

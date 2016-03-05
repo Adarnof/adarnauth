@@ -56,7 +56,7 @@ class GroupApplication(models.Model):
     objects = GroupApplicationManager()
 
 class AutoGroup(models.Model):
-    group = models.OneToOneField(Group, on_delete=models.CASCADE)
+    group = models.OneToOneField(Group, on_delete=models.CASCADE, unique=True)
     object_id = models.PositiveIntegerField()
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     access_rule = GenericForeignKey('content_type', 'object_id')
@@ -71,3 +71,4 @@ class AutoGroup(models.Model):
 
     class Meta:
         unique_together = ('content_type', 'object_id')
+        permissions = (('manage_autogroups', 'User can manage auto groups'),)
