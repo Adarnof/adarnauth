@@ -285,10 +285,13 @@ def group_edit(request, group_id):
                     logger.debug("Detected no changes between group %s and supplied form." % exgroup)
                 return redirect('groupmanagement_group_list_management')
         else:
+            parent = None
+            if exgroup.parent:
+                parent = exgroup.parent.id
             data = {
                 'description': exgroup.description,
                 'hidden': exgroup.hidden,
-                'parent': exgroup.parent,
+                'parent': parent,
                 'applications': exgroup.require_application,
             }
             form = GroupEditForm(initial=data)
