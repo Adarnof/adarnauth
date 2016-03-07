@@ -6,6 +6,10 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from managers import UserManager
 from eveonline.models import EVECharacter
 import logging
+import uuid
+import hashlib
+from django.core.urlresolvers import resolve
+from django.contrib.sessions.models import Session
 
 logger = logging.getLogger(__name__)
 
@@ -41,5 +45,56 @@ class User(AbstractBaseUser, PermissionsMixin):
         if self.main_character:
             return str(self.main_character).encode('utf-8')
         else:
-            logger.error("Missing character model for user with main character id %s, returning id as __unicode__." % self.main_character_id)
+            logger.debug("Missing character model for user with main character id %s, returning id as __unicode__." % self.main_character_id)
             return self.get_short_name().encode('utf-8')
+
+class CallbackRedirect(models.Model):
+    ACTION_CHOICES = (
+        ('login', 'Login'),
+        ('verify', 'Verify API'),
+        ('merge', 'Merge Accounts'),
+    )
+
+    salt = models.CharField(max_length=32)
+    url = models.CharField(max_length=254)
+    session = models.OneToOneField(Session, on_delete=models.CASCADE)
+    action = models.CharField(max_length=6, default='login')
+
+    def __generate_hash(self, request, salt=None):
+        if not request.session.exists(request.session.session_key):
+            request.session.create()
+        if not salt:
+            salt = uuid.uuid4().hex
+        hash = hashlib.sha512(request.session.session_key + salt).hexdigest()
+        return salt, hash
+
+    def populate(self, request):
+        if not request.session.exists(request.session.session_key):
+            request.session.create()
+        salt, hash = self.__generate_hash(request)
+        self.salt = salt
+        self.hash = hash
+        self.session = Session.objects.get(session_key=request.session.session_key)
+        if 'next' in request.GET:
+            self.url = resolve(request.GET['next']).url_name
+        else:
+            self.url='auth_profile'
+
+    def validate(self, request):
+        if not request.session.exists(request.session.session_key):
+            request.session.create()
+        salt, hash = self.__generate_hash(request, salt=self.salt)
+        if 'state' in request.GET:
+            if hash == request.GET['state']:
+                return True
+        return False
+
+    def exchange(self, request):
+        if not request.session.exists(request.session.session_key):
+            request.session.create()
+        if self.validate(request):
+            self.delete()
+            return self.url
+        else:
+            self.delete()
+            return None

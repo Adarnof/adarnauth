@@ -1,5 +1,6 @@
 from django.contrib.auth.models import BaseUserManager
 from django import forms
+from django.db import models
 from eveonline.managers import EVEManager
 from .signals import user_created
 from datetime import datetime
@@ -42,4 +43,4 @@ class UserManager(BaseUserManager):
         user.save()
         logger.info("Created superuser: %s" % str(user))
         return user
-            
+        

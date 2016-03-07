@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 import logging
 from django.conf import settings
+from models import CallbackRedirect
 
 logger = logging.getLogger(__name__)
 
@@ -11,34 +12,48 @@ def sso_login(request):
     code = request.GET['code']
     state = request.GET['state']
     logger.debug("SSO redirect received for state %s with code %s" % (state, code))
-    if state=='login':
-        user = authenticate(code=code)
-        if user is not None:
-            if user.is_active:
-                login(request, user)
-                logger.info("Login succesful for %s" % user)
-                return redirect('auth_profile')
+    if CallbackRedirect.objects.filter(session__session_key=request.session.session_key).exists():
+        model = CallbackRedirect.objects.get(session__session_key=request.session.session_key)
+        if model.action == 'login':
+            if model.validate(request):
+                user = authenticate(code=code)
+                if user is not None:
+                    if user.is_active:
+                        login(request, user)
+                        logger.info("Login succesful for %s" % user)
+                        return redirect(model.url)
+                    else:
+                        #redirect to disabled account page
+                        logger.info("Login unsuccesful for %s: account marked inactive." % user)
+                        return redirect('auth_login_user')
+                else:
+                    #return to login failed page
+                    logger.info("Login unsuccesful: no user model returned.")
+                    return redirect('auth_login_user')
             else:
-                #redirect to disabled account page
-                logger.info("Login unsuccesful for %s: account marked inactive." % user)
+                logger.warn("Failed to validate SSO callback")
                 return redirect('auth_login_user')
         else:
-            #return to login failed page
-            logger.info("Login unsuccesful: no user model returned.")
+            logger.debug("State %s not implemented." % state)
             return redirect('auth_login_user')
     else:
-        logger.debug("State %s not implemented." % state)
+        logger.debug("No CallbackRedirect model found for session key %s" % request.session.session_key)
         return redirect('auth_login_user')
 
 def login_view(request):
-    return render(request, 'public/login.html', {'sso_callback_uri':settings.SSO_CALLBACK_URI, 'sso_client_id':settings.SSO_CLIENT_ID})
+    if not request.session.exists(request.session.session_key):
+        request.session.create() 
+    if CallbackRedirect.objects.filter(session=request.session).exists() is False:
+        model = CallbackRedirect()
+        model.populate(request)
+        model.save()
+    else:
+        model = CallbackRedirect.objects.get(session=request.session)
+    return render(request, 'public/login.html', {'sso_callback_uri':settings.SSO_CALLBACK_URI, 'sso_client_id':settings.SSO_CLIENT_ID, 'state':model.hash})
 
 def logout_view(request):
     logout(request)
     return redirect('auth_profile')
-
-def landing_view(request):
-    return render(request, 'public/landing.html')
 
 @login_required
 def profile_view(request):
