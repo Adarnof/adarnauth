@@ -58,7 +58,7 @@ class CallbackRedirect(models.Model):
     salt = models.CharField(max_length=32)
     url = models.CharField(max_length=254)
     session = models.OneToOneField(Session, on_delete=models.CASCADE)
-    action = models.CharField(max_length=6, default='login')
+    action = models.CharField(max_length=6, default='login', choices=ACTION_CHOICES)
 
     def __generate_hash(self, request, salt=None):
         if not request.session.exists(request.session.session_key):
