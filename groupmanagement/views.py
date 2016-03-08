@@ -130,9 +130,8 @@ def group_application_delete(request, app_id):
 def group_create(request):
     logger.debug("group_create called by user %s" % request.user)
     choices = [(None, 'None'),]
-    for g in ExtendedGroup.objects.all():
-        if g.owner == request.user or request.user in g.admins.all():
-            choices.append((g.id, str(g)))
+    for g in ExtendedGroup.objects.get_parents_for_user(request.user):
+        choices.append((g.id, str(g)))
     if request.method == 'POST':
         form = GroupAddForm(request.POST)
         form.fields['parent'].choices = choices
@@ -193,23 +192,9 @@ def group_manage(request, group_id):
     logger.debug("group_manage called by user %s for group id %s" % (request.user, group_id))
     exgroup = get_object_or_404(ExtendedGroup, id=group_id)
     if exgroup.owner == request.user or request.user in exgroup.admins.all():
-        all_users = list(u for u in exgroup.group.user_set.all() if u != exgroup.owner and u not in list(exgroup.admins.all()))
-        members = []
-        for u in all_users:
-            can_admin = False
-            if u.has_perm('groupmanagement.can_manage_groups') and request.user == exgroup.owner:
-                can_admin = True
-            members.append((u, can_admin))
+        members = [(u, exgroup.can_promote_member(request.user, u)) for u in exgroup.basic_members]
         apps = GroupApplication.objects.filter(extended_group=exgroup).filter(response=None)
-        all_admins = list(exgroup.admins.all())
-        admins = []
-        for a in all_admins:
-            if request.user == exgroup.owner:
-                admins.append((a, True))
-            elif request.user == a:
-                admins.append((a, True))
-            else:
-                admins.append((a, False))
+        admins = [(a, exgroup.can_demote_admin(request.user, a)) for a in exgroup.admins.all()]
         context = {
             'group': exgroup,
             'members': members,
@@ -229,7 +214,7 @@ def group_promote_member(request, group_id, user_id):
     logger.debug("group_promote_member called by user %s for group id %s user id %s" % (request.user, group_id, user_id))
     exgroup = get_object_or_404(ExtendedGroup, id=group_id)
     member = get_object_or_404(User, pk=user_id)
-    if exgroup.owner == request.user:
+    if exgroup.can_promote_member(request.user, member):
         if member not in exgroup.admins.all():
             logger.info("User %s promoting %s to group %s admin" % (request.user, member, exgroup))
             exgroup.admins.add(member)
@@ -368,7 +353,7 @@ def group_remove_member(request, group_id, user_id):
     logger.debug("group_remove_member called by user %s for group id %s user id %s" % (request.user, group_id, user_id))
     exgroup = get_object_or_404(ExtendedGroup, id=group_id)
     member = get_object_or_404(User, pk=user_id)
-    if exgroup.owner == request.user or request.user in exgroup.admins.all():
+    if exgroup.can_remove_member(request.user, member):
         if exgroup.group in member.groups.all():
             if member != exgroup.owner and member not in exgroup.admins.all():
                 logger.info("User %s removing member %s from group %s" % (request.user, member, exgroup))
@@ -386,7 +371,7 @@ def group_remove_member(request, group_id, user_id):
 def group_leave(request, group_id):
     logger.debug("group_leave called by user %s for group id %s" % (request.user, group_id))
     exgroup = get_object_or_404(ExtendedGroup, id=group_id)
-    if exgroup.owner != request.user and request.user not in exgroup.admins.all():
+    if exgroup.can_leave_group(request.user):
         if exgroup.group in request.user.groups.all():
             logger.info("User %s leaving group %s" % (request.user, exgroup))
             request.user.groups.remove(exgroup.group)

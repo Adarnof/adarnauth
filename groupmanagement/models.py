@@ -3,7 +3,7 @@ from django.contrib.auth.models import Group
 from authentication.models import User
 from django.utils import timezone
 from django.db import models
-from managers import GroupApplicationManager
+from managers import GroupApplicationManager, ExtendedGroupManager
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 
@@ -28,6 +28,60 @@ class ExtendedGroup(models.Model):
 
     class Meta:
         permissions = (("can_manage_groups", "Can own or administrate groups."),)
+
+    objects = ExtendedGroupManager()
+
+    def get_possible_admins(self):
+        admins = []
+        for u in self.group.user_set.exclude(pk=self.owner.pk):
+            if u.has_perm('groupmanagement.can_manage_groups'):
+                admins.append(u)
+        return admins
+
+    def get_possible_owners(self):
+        return self.admins.exclude(pk=self.owner.pk)
+
+    def is_visible_to_user(self, user):
+        if user.is_superuser:
+            return True
+        elif user in self.group.user_set.all():
+            return True
+        elif not self.hidden:
+            if self.parent and self.parent in user.groups.all():
+                return True
+        return False
+
+    def can_promote_member(self, user, member):
+        if user == self.owner:
+            if member in self.get_possible_admins() and not user in self.admins.all() and not user == self.owner:
+                return True
+        return False
+
+    def can_demote_admin(self, user, admin):
+        if user == self.owner and admin in self.admins.all():
+            return True
+        elif user == admin and user in self.admins.all():
+            return True
+        return False
+
+    def can_leave_group(self, user):
+        if user == self.owner:
+            return False
+        elif user in self.admins.all():
+            return False
+        return True
+
+    def can_remove_member(self, user, member):
+        if user == self.owner:
+            return False
+        elif member in self.admins.all():
+            return False
+        elif user == self.owner or user in self.admins.all():
+            return True
+
+    @property
+    def basic_members(self):
+        return [u for u in self.group.user_set.all() if u != self.owner and u not in self.admins.all()]
 
 class GroupApplication(models.Model):
     extended_group = models.ForeignKey(ExtendedGroup, on_delete=models.CASCADE, related_name='applications')
