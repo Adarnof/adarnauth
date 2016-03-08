@@ -3,7 +3,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 import logging
 from django.conf import settings
-from models import CallbackRedirect
+from models import CallbackRedirect, User
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +49,10 @@ def login_view(request):
         model.save()
     else:
         model = CallbackRedirect.objects.get(session=request.session)
-    return render(request, 'public/login.html', {'sso_callback_uri':settings.SSO_CALLBACK_URI, 'sso_client_id':settings.SSO_CLIENT_ID, 'state':model.hash})
+        if model.action != 'login':
+            model.action = 'login'
+            model.save()
+    return render(request, 'public/login.html', {'state':model.hash})
 
 def logout_view(request):
     logout(request)
@@ -59,29 +62,31 @@ def logout_view(request):
 def profile_view(request):
     logger.debug("profile_view called by user %s" % request.user)
     main = request.user.main_character
-    if not main:
-        logger.error("User %s missing main character model." % request.user)
     apis = request.user.eveapikeypair_set.all()
     orphans = []
+    unclaimed = []
     for char in request.user.characters.all():
-        if char.apis.all().exists() is not True:
-            orphans.append(char)
-    valid = 0
-    invalid = 0
-    unverified = 0
-    for api in apis:
-        if api.is_valid:
-            valid += 1
-        elif api.is_valid==None:
-            unverified += 1
+        if char.apis.all().exists():
+            for api in char.apis.filter(owner__isnull=True):
+                unclaimed.append(api)
         else:
-            invalid += 1
-    logger.debug("Collected %s apis with %s orphans for user %s" % (len(apis), len(orphans), request.user))
+            orphans.append(char)
+    contested = []
+    for api in apis:
+        for char in api.characters.exclude(user=request.user):
+            if User.objects.filter(main_character_id=char.id).exists():
+                char_main = User.objects.get(main_character_id=char.id)
+            else:
+                char_main = None
+            contested.append((char, char_main))
     ua = request.user.useraccess_set.all()
+    logger.debug("Retrieved %s apis with %s orphans %s contested and %s unclaimed for %s" % (len(apis), len(orphans), len(contested), len(unclaimed), request.user))
     context = {
         'main': main,
         'apis': apis,
         'orphans': orphans,
         'useraccess': ua,
+        'contested': contested,
+        'unclaimed': unclaimed,
     }
     return render(request, 'registered/authentication/profile.html', context)

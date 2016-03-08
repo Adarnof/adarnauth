@@ -52,7 +52,12 @@ def characteraccess_create(request):
             return redirect('access_list_access_rules')
     else:
         form = CharacterAccessForm()
-    return render(request, 'registered/access/create_form.html', context={'form': form, 'type': 'Character'})
+    context = {
+        'form': form,
+        'title': 'Create Character Access Rule',
+        'button_text': 'Create',
+    }
+    return render(request, 'public/form.html', context=context)
 
 @login_required
 @permission_required('access.site_access')
@@ -83,7 +88,12 @@ def corpaccess_create(request):
             return redirect('access_list_access_rules')
     else:
         form = CorpAccessForm()
-    return render(request, 'registered/access/create_form.html', context={'form': form, 'type': 'Corporation'})
+    context = {
+        'form': form,
+        'title': 'Create Corporation Access Rule',
+        'button_text': 'Create',
+    }
+    return render(request, 'public/form.html', context=context)
 
 @login_required
 @permission_required('access.site_access')
@@ -114,7 +124,12 @@ def allianceaccess_create(request):
             return redirect('access_list_access_rules')
     else:
         form = AllianceAccessForm()
-    return render(request, 'registered/access/create_form.html', context={'form': form, 'type': 'Alliance'})
+    context = {
+        'form': form,
+        'title': 'Create Alliance Access Rule',
+        'button_text': 'Create',
+    }
+    return render(request, 'public/form.html', context=context)
 
 @login_required
 @permission_required('access.site_access')

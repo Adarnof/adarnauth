@@ -196,7 +196,7 @@ class EVEApiKeyPair(models.Model):
 
     id = models.PositiveIntegerField(primary_key=True)
     vcode = models.CharField(max_length=254)
-    owner = models.ForeignKey('authentication.User', null=True)
+    owner = models.ForeignKey('authentication.User', null=True, blank=True)
     is_valid = models.NullBooleanField(blank=True)
     access_mask = models.IntegerField(default=0)
     type = models.CharField(max_length=11, choices=TYPE_CHOICES, blank=True)
@@ -208,6 +208,33 @@ class EVEApiKeyPair(models.Model):
 
     def __unicode__(self):
         return 'API Key %s' % self.id
+
+    def validate(self):
+        logger.debug("Checking if api id %s is valid." % id)
+        try:
+            api = evelink.api.API(api_key=(self.id, self.vcode))
+            account = evelink.account.Account(api=api)
+            info = account.key_info()
+            logger.debug("Verified api id %s is valid." % id)
+            return True
+        except:
+            logger.debug("API id %s is invalid." % id)
+            return False
+
+    def get_standings(self):
+        if self.type == 'corp':
+            try:
+                logger.debug("Getting corp standings with api id %s" % id)
+                api = evelink.api.API(api_key=(id, vcode))
+                corp = evelink.corp.Corp(api=api)
+                corpinfo = corp.contacts()
+                results = corpinfo[0]
+                return results
+            except evelink.api.APIError as error:
+                logger.exception("APIError occured while retrieving corp standings from api id %s" % id, exc_info=True)
+                return {}
+        else:
+            raise ValueError('Only corp keys are supported')
 
     def update(self):
         chars = []

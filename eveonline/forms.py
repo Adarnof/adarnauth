@@ -1,12 +1,22 @@
 from django import forms
-from eveonline.managers import EVEApiManager
+from eveonline.models import EVEApiKeyPair
 
 class ApiAddForm(forms.Form):
 
     id = forms.IntegerField(min_value=1, label="API ID", required=True)
     vcode = forms.CharField(max_length=254, label="API VCode", required=True)
 
+    def clean_id(self):
+        try:
+            id = int(self.cleaned_data['id'])
+            return self.cleaned_data['id']
+        except:
+            raise forms.ValidationError("ID must be an integer")
+
     def clean(self):
-        if EVEApiManager.check_api_key_is_valid(self.cleaned_data['id'], self.cleaned_data['vcode']) is not True:
+        model = EVEApiKeyPair()
+        model.id = self.cleaned_data['id']
+        model.vcode = self.cleaned_data['vcode']
+        if not model.validate():
             raise forms.ValidationError("API key is not valid.")
         return self.cleaned_data

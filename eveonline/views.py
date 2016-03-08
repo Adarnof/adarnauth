@@ -1,8 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
-from .forms import ApiAddForm
-from .models import EVEApiKeyPair, EVECharacter
-from authentication.models import User
+from forms import ApiAddForm
+from models import EVEApiKeyPair, EVECharacter
+from authentication.models import User, CallbackRedirect
+from authentication.tasks import get_character_id_from_sso_code
+from django.core.urlresolvers import reverse
 import logging
 
 logger = logging.getLogger(__name__)
@@ -16,15 +18,28 @@ def api_key_add(request):
         if form.is_valid():
             id = form.cleaned_data['id']
             vcode = form.cleaned_data['vcode']
-            api = EVEApiKeyPair(id=id, vcode=vcode, owner=request.user)
-            logger.info("User %s creating %s" % (request.user, api))
-            api.save()
-            return redirect('auth_profile')
+            if EVEApiKeyPair.objects.filter(id=id).exists():
+                if EVEApiKeyPair.objects.filter(id=id).filter(owner__isnull=True).exists():
+                    logger.info("User %s entered existing key %s missing owner - redirecting to SSO verification" % (request.user, EVEApiKeyPair.objects.get(id=id)))
+                    return redirect(api_key_verify, id)
+                else:
+                    logger.warn("User %s attempting to duplicate %s" % (request.user, EVEApiKeyPair.objects.get(id=id)))
+                    form.add_error(None, 'Key with ID %s already claimed')
+            else:
+                api = EVEApiKeyPair(id=id, vcode=vcode)
+                logger.info("User %s creating %s" % (request.user, api))
+                api.save()
+                return redirect(api_key_verify, api.id)
         else:
-             logger.warn("User %s ApiAddForm failed validation." % request.user)
+             logger.debug("User %s ApiAddForm failed validation." % request.user)
     else:
         form = ApiAddForm()
-    return render(request, 'registered/eveonline/apiaddform.html', context={'form':form})
+    context = {
+        'form': form,
+        'title': 'Add API Key',
+        'button_text': 'Add',
+    }
+    return render(request, 'public/form.html', context=context)
 
 @login_required
 def api_key_delete(request, api_id):
@@ -49,33 +64,40 @@ def api_key_update(request, api_id):
     return redirect('auth_profile')
 
 @login_required
-def character_list(request):
-    logger.debug("character_list called by user %s" % request.user)
-    main = request.user.main_character
-    if not main:
-        logger.error("User %s missing main character model." % request.user)
-    apis = EVEApiKeyPair.objects.filter(owner=request.user)
-    orphans = []
-    for char in request.user.characters.all():
-        if char.apis.all().exists() is not True:
-            orphans.append(char)
-    valid = 0
-    invalid = 0
-    unverified = 0
-    for api in apis:
-        if api.is_valid:
-            valid += 1
-        elif api.is_valid==None:
-            unverified += 1
+def api_key_verify(request, api_id):
+    logger.debug("api_key_verify called by user %s for api_id %s" % (request.user, api_id))
+    api = get_object_or_404(EVEApiKeyPair, id=api_id)
+    if request.method == 'POST':
+        code = request.get['code']
+        if CallbackRedirect.objects.filter(session__session_key=request.session.session_key).filter(action='verify').exists():
+            model = CallbackRedirect.objects.get(session__session_key=request.session.session_key, action='verify')
+            if model.validate(request):
+                character_id = get_character_id_from_sso_code(code)
+                if character_id:
+                    if api.characters.filter(id=character_id).exists():
+                        logger.info("User %s verified %s via SSO" % (request.user, api))
+                        api.owner = request.user
+                        api.save(update_fields=['user'])
+                    else:
+                        logger.warn("User %s failed to verify %s via SSO: authorized character not found on key" % (request.user, api))
+                else:
+                    logger.warn("User %s failed to verify %s via SSO: failed to retrieve character id from code exchange" % (request.user, api))
+            else:
+                logger.warn("Failed to validate SSO callback for user %s verification of %s" % (request.user, api))
         else:
-            invalid += 1
-    logger.debug("Collected %s apis with %s orphans for user %s" % (len(apis), len(orphans), request.user))
-    context = {
-        'main': main,
-        'apis': apis,
-        'orphans': orphans,
-        'valid': valid,
-        'invalid': invalid,
-        'unverified': unverified,
-    }
-    return render(request, 'registered/eveonline/characterlist.html', context=context)
+            logger.warn("Failed to locate CallbackRedirect for user %s verification of %s" % (request.user, api))
+        return redirect('auth_profile')
+    else:
+        if CallbackRedirect.objects.filter(session__session_key=request.session.session_key).exists():
+            model = CallbackRedirect.objects.get(session__session_key=request.session.session_key)
+            if model.action != 'verify':
+                model.action = 'verify'
+                model.save()
+        else:
+            url = reverse(api_key_verify, args=api_id)
+            request.GET['next'] = url
+            model = CallbackRedirect()
+            model.populate(request)
+            model.action = "verify"
+            model.save()
+        return render(request, 'public/login.html', {'state': model.hash})

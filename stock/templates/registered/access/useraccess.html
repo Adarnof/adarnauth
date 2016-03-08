@@ -27,7 +27,7 @@
                         <td class="text-center">{{ ua.character }}</td>
                         <td class="text-center">{{ ua.access_rule }}</td>
                         <td class="text-right">
-                            <a href="{% url 'access_recheck_useraccess' ua.id %}"><button type="button" class="btn btn-warning" label="Recheck"><span class="glyphicon glyphicon-refresh"></span></button></a>
+                            <a href="{% url 'access_recheck_useraccess' ua.id %}" class="btn btn-warning" label="Recheck"><span class="glyphicon glyphicon-refresh"></span></a>
                         </td>
                     </tr>
                 {% endfor %}

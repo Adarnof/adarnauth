@@ -37,7 +37,7 @@
                                     <div class="alert alert-danger" role="alert">Missing main character model.</div>
                                 {% endif %}
                             </div>
-                            <a href="{% url 'eveonline_api_key_add' %}"><button type="button" class="btn btn-block btn-success" label="Add API Key">Add API Key</button></a>
+                            <a href="{% url 'eveonline_api_key_add' %}" class="btn btn-block btn-success" label="Add API Key">Add API Key</a>
                         </div>
                     </div>
                     <div class="col-lg-6 text-center">
@@ -68,7 +68,7 @@
                     </div>
                 </div>
                 {% if orphans %}
-                    <div class="panel panel-warning">
+                    <div class="panel panel-default">
                         <div class="panel-heading">Characters Missing APIs</div>
                         <table class="table">
                             <tr>
@@ -90,13 +90,76 @@
                         </table>
                     </div>
                 {% endif %}
+                {% if contested %}
+                    <div class="panel panel-default">
+                        <div class="panel-heading">Contested Characters</div>
+                        <div class="alert">You have a claim to the following characters who have no assigned owner. This can arise when multiple users input API keys containing these characters. Please contact your site admin to resolve this situation.</div>
+                        <table class="table">
+                            <tr>
+                                <th class="text-center"></th>
+                                <th class="text-center">Name</th>
+                                <th class="text-center">Corp</th>
+                                <th class="text-center">Alliance</th>
+                                <th class="text-center">Reason</th>
+                            </tr>
+                            {% for char in contested %}
+                                <tr>
+                                    <td class="text-center">
+                                        <img class="ra-avatar img-responsive" src="https://image.eveonline.com/Character/{{ char.0.id }}_32.jpg">
+                                    </td>
+                                    <td class="text-center">{{ char.0.name }}</td>
+                                    <td class="text-center">{{ char.0.corp_name }}</td>
+                                    <td class="text-center">{{ char.0.alliance_name }}</td>
+                                    <td class="text-center">
+                                        {% if char.1 %}
+                                            <p>Main character of a user account.</p>
+                                        {% elif char.0.apis.count > 1 %}
+                                            <p>{{ char.0.apis.count }} APIs containing character belonging to multiple users.</p>
+                                        {% else %}
+                                            <p>Something went very wrong.</p>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </table>
+                    </div>
+                {% endif %}
+                {% if unclaimed %}
+                    {% for api in unclaimed %}
+                        <div class="panel panel-warning">
+                            <div class="panel-heading">Unclaimed API ID {{ api.id }} <span class="glyphicon glyphicon-question-sign"></span>
+                                <div class="text-right">
+                                    <a href="{% url 'eveonline_api_key_verify' api.id %}" class="btn btn-primary title="Claim"><span class="glyphicon glyphicon-user"></span></a>
+                                </div>
+                            </div>
+                            <table class="table">
+                                <tr>
+                                    <th class="text-center"></th>
+                                    <th class="text-center">Name</th>
+                                    <th class="text-center">Corp</th>
+                                    <th class="text-center">Alliance</th>
+                                </tr>
+                                {% for char in api.characters.all %}
+                                    <tr>
+                                        <td class="text-center">
+                                            <img class="ra-avatar img-responsive" src="https://image.eveonline.com/Character/{{ char.id }}_32.jpg">
+                                        </td>
+                                        <td class="text-center">{{ char.name }}</td>
+                                        <td class="text-center">{{ char.corp_name }}</td>
+                                        <td class="text-center">{{ char.alliance_name }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </table>
+                        </div>
+                    {% endfor %}
+                 {% endif %}
                 {% if apis %}
                     {% for api in apis %}
                         <div class="panel panel-{{ api.is_valid|yesno:"success,danger,default" }}">
                             <div class="panel-heading">API ID {{ api.id }} <span class="glyphicon glyphicon-{{ api.is_valid|yesno:"ok-sign,minus-sign,question-sign" }}"></span>
                                 <div class="text-right">
-                                    <a href="{% url 'eveonline_api_key_update' api.id %}"><button type="button" class="btn btn-primary"><span class="glyphicon glyphicon-refresh"></span></button></a>
-                                    <a href="{% url 'eveonline_api_key_delete' api.id %}"><button type="button" class="btn btn-danger"><span class="glyphicon glyphicon-remove"></span></button></a>
+                                    <a href="{% url 'eveonline_api_key_update' api.id %}" class="btn btn-primary" title="Update"><span class="glyphicon glyphicon-refresh"></span></a>
+                                    <a href="{% url 'eveonline_api_key_delete' api.id %}" class="btn btn-danger" title="Delete"><span class="glyphicon glyphicon-remove"></span></a>
                                 </div>
                             </div>
                             <table class="table">

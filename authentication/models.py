@@ -33,13 +33,19 @@ class User(AbstractBaseUser, PermissionsMixin):
     def main_character(self):
         if self.characters.filter(id=self.main_character_id).exists():
             return self.characters.get(id=self.main_character_id)
+        elif EVECharacter.objects.filter(id=self.main_character_id).exists():
+            logger.warn("User with main character ID %s has detached main character model" % self.get_full_name())
+            return EVECharacter.objects.get(id=self.main_character_id)
         else:
             return None
 
-    def get_short_name(self):
-        return str(self.main_character_id)
     def get_full_name(self):
-        return str(self)
+        return str(self.main_character_id)
+    def get_short_name(self):
+        if self.main_character:
+            return str(self.main_character)
+        else:
+            return self.get_full_name()
 
     def __unicode__(self):
         if self.main_character:
@@ -60,32 +66,38 @@ class CallbackRedirect(models.Model):
     session = models.OneToOneField(Session, on_delete=models.CASCADE)
     action = models.CharField(max_length=6, default='login', choices=ACTION_CHOICES)
 
-    def __generate_hash(self, request, salt=None):
+    @property
+    def hash(self):
+        return self.__generate_hash()
+
+    def __generate_hash(self):
+        return hashlib.sha512(self.session.session_key + self.salt).hexdigest()
+
+    def __generate_salt(self):
+        return uuid.uuid4().hex
+
+    def __generate_hash_by_request(self, request, salt):
         if not request.session.exists(request.session.session_key):
             request.session.create()
-        if not salt:
-            salt = uuid.uuid4().hex
         hash = hashlib.sha512(request.session.session_key + salt).hexdigest()
-        return salt, hash
+        return hash
 
     def populate(self, request):
         if not request.session.exists(request.session.session_key):
             request.session.create()
-        salt, hash = self.__generate_hash(request)
+        salt = self.__generate_salt()
         self.salt = salt
-        self.hash = hash
         self.session = Session.objects.get(session_key=request.session.session_key)
-        if 'next' in request.GET:
-            self.url = resolve(request.GET['next']).url_name
-        else:
-            self.url='auth_profile'
+        url = request.GET.get('next', '/')
+        self.url = resolve(request.GET['next']).url_name
 
     def validate(self, request):
         if not request.session.exists(request.session.session_key):
             request.session.create()
-        salt, hash = self.__generate_hash(request, salt=self.salt)
-        if 'state' in request.GET:
-            if hash == request.GET['state']:
+        req_hash = self.__generate_hash_by_request(request, self.salt)
+        state =  request.GET.get('state', None)
+        if req_hash == request.GET['state']:
+            if self.__generate_hash() == req_hash:
                 return True
         return False
 

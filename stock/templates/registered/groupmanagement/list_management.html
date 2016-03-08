@@ -18,7 +18,7 @@
                 <th class="text-right">
                     {% if perms.groupmanagement.add_extendedgroup %}
                         <div class="text-right">
-                            <a href="{% url 'groupmanagement_group_create' %}"><button type="button" class="btn btn-success" title="Add Group"><span class="glyphicon glyphicon-plus"></span></button></a>
+                            <a href="{% url 'groupmanagement_group_create' %}" class="btn btn-success" title="Add Group"><span class="glyphicon glyphicon-plus"></span></a>
                         </div>
                     {% endif %}
                 </th>
@@ -44,15 +44,15 @@
                         </td>
                         <td class="text-center">{{ g.group.user_set.count }}</td>
                         <td class="text-right">
-                            <a href="{% url 'groupmanagement_group_manage' g.id %}"><button type="button" class="btn btn-primary" title="Manage Members"><span class="glyphicon glyphicon-user"></span></button></a>
+                            <a href="{% url 'groupmanagement_group_manage' g.id %}" class="btn btn-primary" title="Manage Members"><span class="glyphicon glyphicon-user"></span></a>
                             {% if perms.groupmanagement.change_extendedgroup %}
-                                <a href="{% url 'groupmanagement_group_edit' g.id %}"><button type="button" class="btn btn-success" title="Edit"><span class="glyphicon glyphicon-pencil"></span></button></a>
+                                <a href="{% url 'groupmanagement_group_edit' g.id %}" class="btn btn-success" title="Edit"><span class="glyphicon glyphicon-pencil"></span></a>
                             {% endif %}
                             {% if g.admins.all %}
-                                <a href="{% url 'groupmanagement_group_transfer_ownership' g.id %}"><button type="button" class="btn btn-warning" title="Transfer Ownership"><span class="glyphicon glyphicon-share-alt"></span></button></a>
+                                <a href="{% url 'groupmanagement_group_transfer_ownership' g.id %}" class="btn btn-warning" title="Transfer Ownership"><span class="glyphicon glyphicon-share-alt"></span></a>
                             {% endif %}
                             {% if perms.groupmanagement.delete_extendedgroup %}
-                                <a href="{% url 'groupmanagement_group_delete' g.id %}"><button type="button" class="btn btn-danger" title="Delete"><span class="glyphicon glyphicon-trash"></span></button></a>
+                                <a href="{% url 'groupmanagement_group_delete' g.id %}" class="btn btn-danger" title="Delete"><span class="glyphicon glyphicon-trash"></span></a>
                             {% endif %}
                         </td>
                     </tr>
@@ -94,7 +94,7 @@
                         </td>
                         <td class="text-center">{{ g.group.user_set.count }}</td>
                         <td class="text-right">
-                            <a href="{% url 'groupmanagement_group_manage' g.id %}"><button type="button" class="btn btn-primary" title="Manage Members"><span class="glyphicon glyphicon-user"><span></button></a>
+                            <a href="{% url 'groupmanagement_group_manage' g.id %}" class="btn btn-primary" title="Manage Members"><span class="glyphicon glyphicon-user"><span></a>
                         </td>
                     </tr>
                 {% endfor %}
@@ -110,7 +110,7 @@
                 <th class="text-center">Member Count</th>
                 <th class="text-right">
                     {% if perms.groupmanagement.add_autogroup %}
-                        <a href="{% url 'groupmanagement_auto_group_add'%}"><button type="button" class="btn btn-success" title="Add Auto Group"><span class="glyphicon glyphicon-plus"><span></button></a>
+                        <a href="{% url 'groupmanagement_auto_group_add'%}" class="btn btn-success" title="Add Auto Group"><span class="glyphicon glyphicon-plus"><span></a>
                     {% endif %}
                 </th>
             </tr>
@@ -121,9 +121,9 @@
                         <td class="text-center">{{ ag.access_rule }}</td>
                         <td class="text-center">{{ ag.group.user_set.count }}</td>
                         <td class="text-right">
-                            <a href="{% url 'groupmanagement_auto_group_view' ag.id %}"><button type="button" class="btn btn-primary" title="View Members"><span class="glyphicon glyphicon-user"><span></button></a>
+                            <a href="{% url 'groupmanagement_auto_group_view' ag.id %}" class="btn btn-primary" title="View Members"><span class="glyphicon glyphicon-user"><span></a>
                             {% if perms.groupmanagement.delete_autogroup %}
-                                <a href="{% url 'groupmanagement_auto_group_delete' ag.id %}"><button type="button" class="btn btn-danger" title="Delete"><span class="glyphicon glyphicon-trash"><span></button></a>
+                                <a href="{% url 'groupmanagement_auto_group_delete' ag.id %}" class="btn btn-danger" title="Delete"><span class="glyphicon glyphicon-trash"><span></a>
                             {% endif %}
                         </td>
                     </tr>

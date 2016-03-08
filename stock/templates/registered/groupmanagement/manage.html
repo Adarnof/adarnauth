@@ -49,8 +49,8 @@
                         <td class="text-center">{{ app.user.main_character.corp_name }}</td>
                         <td class="text-center">{{ app.user.main_character.alliance_name }}</td>
                         <td class="text-center">
-                            <a href="{% url 'groupmanagement_group_application_accept' app.id %}"><button type="button" class="btn btn-success" title="Accept"><span class="glyphicon glyphicon-ok"></span></button></a>
-                            <a href="%{ url 'groupmanagement_group_application_reject' app.id %}"><button type="button" class="btn btn-danger" title="Reject"><span class="glyphicon glyphicon-remove"></span></button></a>
+                            <a href="{% url 'groupmanagement_group_application_accept' app.id %}" class="btn btn-success" title="Accept"><span class="glyphicon glyphicon-ok"></span></a>
+                            <a href="%{ url 'groupmanagement_group_application_reject' app.id %}" class="btn btn-danger" title="Reject"><span class="glyphicon glyphicon-remove"></span></a>
                         </td>
                     </tr>
                 {% endfor %}
@@ -70,7 +70,7 @@
                         <td class="text-center">{{ admin.0 }}</td>
                         <td class="text-center">
                             {% if admin.1 %}
-                                <a href="{% url 'groupmanagement_group_demote_admin' group.id admin.0.pk %}"><button type="button" class="btn btn-danger" title="Demote"><span class="glyphicon glyphicon-chevron-down"></span></button></a>
+                                <a href="{% url 'groupmanagement_group_demote_admin' group.id admin.0.pk %}" class="btn btn-danger" title="Demote"><span class="glyphicon glyphicon-chevron-down"></span></a>
                             {% endif %}
                         </td>
                     </tr>
@@ -95,9 +95,9 @@
                         <td class="text-center">{{ member.0.main_character.alliance_name }}</td>
                         <td class="text-center">
                             {% if member.1 %}
-                                <a href="{% url 'groupmanagement_group_promote_member' group.id member.0.pk %}"><button type="button" class="btn btn-success" title="Promote"><span class="glyphicon glyphicon-chevron-up"></span></button></a>
+                                <a href="{% url 'groupmanagement_group_promote_member' group.id member.0.pk %}" class="btn btn-success" title="Promote"><span class="glyphicon glyphicon-chevron-up"></span></a>
                             {% endif %}
-                            <a href="{% url 'groupmanagement_group_remove_member' group.id member.0.pk %}"><button type="button" class="btn btn-danger" title="Kick"><span class="glyphicon glyphicon-remove"></span></button></a>
+                            <a href="{% url 'groupmanagement_group_remove_member' group.id member.0.pk %}" class="btn btn-danger" title="Kick"><span class="glyphicon glyphicon-remove"></span></a>
                         </td>
                     </tr>
                 {% endfor %}

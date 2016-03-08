@@ -165,7 +165,12 @@ def group_create(request):
     else:
         form = GroupAddForm()
         form.fields['parent'].choices = choices
-    return render(request, 'registered/groupmanagement/create.html', context={'form':form})
+    context = {
+        'form': form,
+        'title': 'Create Group',
+        'button_text': 'Create',
+    }
+    return render(request, 'public/form.html', context=context)
 
 @login_required
 @permission_required('access.site_access')
@@ -308,7 +313,12 @@ def group_edit(request, group_id):
             }
             form = GroupEditForm(initial=data)
             form.fields['parent'].choices = choices
-        return render(request, 'registered/groupmanagement/edit.html', context={'form':form})
+        context = {
+            'form': form,
+            'title': 'Edit Group',
+            'button_text': 'Edit',
+        }
+        return render(request, 'public/form.html', context=context)
     else:
         logger.warn("User %s not eligible to edit group %s" % (request.user, exgroup))
         return redirect('groupmanagement_group_list_management')
@@ -341,7 +351,12 @@ def group_transfer_ownership(request, group_id):
             if not exgroup.admins.all():
                 logger.warn("User %s unable to transfer ownership of %s - no admins found." % (request.user, exgroup))
                 return redirect('groupmanagement_group_list_management')
-        return render(request, 'registered/groupmanagement/transfer.html', context={'form':form})
+        context = {
+            'form': form,
+            'title': 'Transfer Ownership of %s' % exgroup,
+            'button_text': 'Transfer',
+        }
+        return render(request, 'public/form.html', context=context)
     else:
         logger.warn("User %s not eligible to transfer ownership of %s" % (request.user, exgroup))
         return redirect('groupmanagement_group_manage', group_id)
@@ -427,7 +442,12 @@ def auto_group_add(request):
     else:
         form = AutoGroupForm()
         form.fields['access_rule'].choices = choices
-    return render(request, 'registered/groupmanagement/autogroup_form.html', {'form': form})
+    context = {
+        'form': form,
+        'title': 'Create Auto Group',
+        'button_text': 'Create',
+    }
+    return render(request, 'public/form.html', context=context)
 
 @login_required
 @permission_required('access.site_access')

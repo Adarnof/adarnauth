@@ -19,8 +19,8 @@
                         <td class="text-center">{{ ua.user }}</td>
                         <td class="text-center">{{ ua }}</td>
                         <td class="text-right">
-                            <a href="{% url 'access_recheck_useraccess' ua.id %}"><button type="button" class="btn btn-warning" label="Recheck"><span class="glyphicon glyphicon-refresh"></span></button></a>
-                            <a href="{% url 'access_list_useraccess' ua.user.pk %}"><button type="button" class="btn btn-primary" label="View User Access"><span class="glyphicon glyphicon-user"></span></button></a>
+                            <a href="{% url 'access_recheck_useraccess' ua.id %}" class="btn btn-warning" label="Recheck"><span class="glyphicon glyphicon-refresh"></span></a>
+                            <a href="{% url 'access_list_useraccess' ua.user.pk %}" class="btn btn-primary" label="View User Access"><span class="glyphicon glyphicon-user"></span></a>
                         </td>
                     </tr>
                 {% endfor %}
