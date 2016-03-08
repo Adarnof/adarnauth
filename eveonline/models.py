@@ -94,6 +94,37 @@ class EVECharacter(models.Model):
             self.save(update_fields=update_fields)
         return True
 
+    def get_possible_users(self):
+        from authentication.models import User
+        users = set([])
+        if User.objects.filter(main_character_id=self.id).exists():
+            logger.debug("A user account exists with main_character_id %s" % self.id)
+            users.add(User.objects.get(main_character_id=self.id))
+        for api in self.apis.filter(is_valid=True).filter(owner__isnull=False):
+            logger.debug("%s containing this character has an owner" % api)
+            users.add(api.owner)
+        logger.debug("Found %s possible owners for %s" % (len(users), self))
+        return list(users)
+
+    def assign_user(self):
+        users = self.get_possible_users()
+        if len(users) == 1:
+            logger.debug("%s is not contested and has one possible user" % self)
+            if self.user != users[0]:
+                logger.debug("Changing assigned user of %s from %s to %s" % (self, self.user, users[0]))
+                self.user = users[0]
+                self.save(update_fields=['user'])
+            else:
+                logger.debug("%s has correct user assigned" % self)
+        else:
+            if len(users) > 1:
+                logger.debug("%s is in a contested state with %s possible users: %s" % (self, len(users), users))
+            else:
+                logger.debug("No possible users found for %s" % self)
+            if self.user:
+                self.user = None
+                self.save(update_fields=['user'])
+
 class EVECorporation(models.Model):
 
     id = models.PositiveIntegerField(primary_key=True)

@@ -2,10 +2,10 @@ from django.dispatch import receiver, Signal
 import logging
 from django.db.models.signals import post_delete, post_save, m2m_changed, pre_delete, pre_save
 from models import EVECharacter, EVECorporation, EVEAlliance, EVEStanding, EVEApiKeyPair
-from tasks import assess_character_owner, update_api_key, assess_main_char_api_verified
-from authentication.models import User
+from tasks import assess_main_char_api_verified
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import Permission
+from authentication.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -61,16 +61,20 @@ def post_save_eveapikeypair(sender, instance, update_fields=[], *args, **kwargs)
     if update_fields:
         if 'is_valid' in update_fields:
             for char in instance.characters.all():
-                assess_character_owner(char)
+                char.assign_user()
                 if char.user:
                     assess_main_char_api_verified(char.user)
         else:
            logger.debug("Queueing update for %s" % instance)
            update_api_key(instance)
+        if 'owner' in update_fields:
+            for char in instance.characters.all():
+                char.assign_user()
     else:
         logger.debug("Queueing update for %s" % instance)
         update_api_key(instance)
         for char in instance.characters.all():
+            char.assign_user()
             if char.user:
                 assess_main_char_api_verified(char.user)
 
@@ -78,7 +82,7 @@ def post_save_eveapikeypair(sender, instance, update_fields=[], *args, **kwargs)
 def post_delete_user(sender, instance, *args, **kwargs):
     logger.debug("Received post_delete signal from user %s" % instance)
     for char in instance.characters.all():
-        assess_character_owner(char)
+        char.assign_user()
 
 @receiver(m2m_changed, sender=EVEApiKeyPair.characters.through)
 def m2m_changed_eveapikeypair_characters(sender, instance, action, model, pk_set, *args, **kwargs):
@@ -87,7 +91,7 @@ def m2m_changed_eveapikeypair_characters(sender, instance, action, model, pk_set
         if pk_set:
             for pk in pk_set:
                 char = model.objects.get(pk=pk)
-                assess_character_owner(char)
+                char.assign_user()
                 if char.user:
                     assess_main_char_api_verified(char.user)
         else:

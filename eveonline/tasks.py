@@ -73,61 +73,6 @@ def update_api_key(api):
     api.update()
 
 @shared_task
-def assess_character_owner(character):
-    logger.debug("Assigning new owner for character %s" % character)
-    if User.objects.filter(main_character_id=character.id).exists():
-        logger.debug("Character %s is a main" % character)
-        user = User.objects.get(main_character_id=character.id)
-        if character.user != user:
-            logger.info("Assigning user %s their main character model %s" % (user, character))
-            character.user = user
-            character.save(update_fields=['user'])
-    else:
-        logger.debug("Character %s is not a main. Judging ownership by API keys." % character)
-        if character.apis.filter(is_valid=True).exists():
-            if character.user:
-                if character.apis.filter(is_valid=True).filter(owner=character.user).exists():
-                    if character.apis.filter(is_valid=True).exclude(owner=character.user).exists():
-                        logger.warn("Character %s has contested ownership via APIs %s" % (character, character.apis.filter(is_valid=True)))
-                        character.user = None
-                        character.save(update_fields=['user'])
-                    else:
-                        logger.debug("User %s retain character %s via valid apis %s" % (character.user, character, character.apis.filter(owner=character.user).filter(is_valid=True)))
-                else:
-                    logger.debug("Current owner %s has no valid apis for character %s" % (character.user, character))
-                    if character.apis.filter(is_valid=True).exclude(owner=character.user).exists():
-                        logger.debug("Other users have valid APIs for character %s" % character)
-                        apis = character.apis.filter(is_valid=True).exclude(owner=character.user)
-                        first_api = apis[0]
-                        if apis.exclude(owner=first_api.owner).exists():
-                            logger.warn("Character %s has contested ownership via APIs %s" % (character, apis))
-                            character.user = None
-                            character.save(update_fields=['user'])
-                        else:
-                            logger.info("Assigning ownership of character %s to user %s via %s" % (character, first_api.owner, first_api))
-                            character.user = first_api.owner
-                            character.save(update_fields=['user'])
-                    else:
-                        logger.debug("No valid APIs for character %s - removing user %s as owner" % (character, character.user))
-                        character.user = None
-                        character.save(update_fields=['user'])
-            else:
-                logger.debug("Users have valid apis for user-less character %s" % character)
-                apis = character.apis.filter(is_valid=True)
-                first_api = apis[0]
-                if apis.exclude(owner=first_api.owner).exists():
-                    logger.warn("Character %s has contested ownership - refusing to assign owner - APIs %s" % (character, apis))
-                else:
-                    logger.info("Assigning ownership of character %s to user %s via %s" % (character, first_api.owner, first_api))
-                    character.user = first_api.owner
-                    character.save(update_fields=['user'])
-        else:
-            logger.info("Character %s has no verifiable owner. Clearing model user field." % character)
-            if character.user:
-                character.user = None
-                character.save(update_fields=['user'])
-
-@shared_task
 def assess_main_char_api_verified(user):
     logger.debug("Checking to see if user %s main character is API verified." % user)
     perm, c = Permission.objects.get_or_create(content_type=ContentType.objects.get_for_model(EVEApiKeyPair), codename='api_verified')

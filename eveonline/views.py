@@ -29,7 +29,7 @@ def api_key_add(request):
                 api = EVEApiKeyPair(id=id, vcode=vcode)
                 logger.info("User %s creating %s" % (request.user, api))
                 api.save()
-                return redirect(api_key_verify, api.id)
+                return redirect('eveonline_api_key_verify', api.pk)
         else:
              logger.debug("User %s ApiAddForm failed validation." % request.user)
     else:
