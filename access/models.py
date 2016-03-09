@@ -23,7 +23,6 @@ class UserAccess(models.Model):
 
     class Meta:
         permissions = (("site_access", "User has access to site."), ("manage_access", "User can manage site access."), ("audit_access", "User can view access granted per rule."))
-        unique_together = ('object_id', 'content_type', 'user')
 
     def set_rule(self, object):
         if isinstance(object, CharacterAccessRule) or isinstance(object, CorpAccessRule) or isinstance(object, AllianceAccessRule) or isinstance(object, StandingAccessRule):
@@ -56,14 +55,13 @@ class CorpAccessRule(models.Model):
         for char in characters:
             if not char.user:
                 logger.debug("CorpAccess %s applies to character %s but they have no user." % (self, char))
-                continue
-            if useraccess.filter(character=char).exists():
+            elif useraccess.filter(character=char).exists():
                 logger.debug("CorpAccess %s already applied to character %s" % (self, char))
-                continue
-            logger.info("Applying CorpAccess %s to user %s through character %s" % (self, char.user, char))
-            ua = UserAccess(user=char.user, character=char)
-            ua.set_rule(self)
-            ua.save()
+            else:
+                logger.info("Applying CorpAccess %s to user %s through character %s" % (self, char.user, char))
+                ua = UserAccess(user=char.user, character=char)
+                ua.set_rule(self)
+                ua.save()
         for ua in useraccess:
             if not ua.character in characters:
                 logger.info("CorpAccess %s no longer applies to %s because %s is not in corp" % (self, ua.user, ua.character))
@@ -95,14 +93,13 @@ class AllianceAccessRule(models.Model):
         for char in characters:
             if not char.user:
                 logger.debug("AllianceAccess %s applies to character %s but they have no user." % (self, char))
-                continue
-            if useraccess.filter(character=char).exists():
+            elif useraccess.filter(character=char).exists():
                 logger.debug("AllianceAccess %s already applied to character %s" % (self, char))
-                continue
-            logger.info("Applying AllianceAccess %s to user %s through character %s" % (self, char.user, char))
-            ua = UserAccess(user=char.user, character=char)
-            ua.set_rule(self)
-            ua.save()
+            else:
+                logger.info("Applying AllianceAccess %s to user %s through character %s" % (self, char.user, char))
+                ua = UserAccess(user=char.user, character=char)
+                ua.set_rule(self)
+                ua.save()
         for ua in useraccess:
             if not ua.character in characters:
                 logger.info("AllianceAccess %s no longer applies to %s because %s is not in alliance" % (self, ua.user, ua.character))
@@ -129,23 +126,24 @@ class CharacterAccessRule(models.Model):
         ct = ContentType.objects.get_for_model(self)
         logger.debug("Assigning UserAccess by CharacterAccess rule %s" % self)
         char = self.character
+        useraccess = self.access.filter(content_type=ct).filter(object_id=self.id)
         if char.user:
             user = char.user
             logger.debug("Character for CharacterAccess rule %s has user %s assigned." % (self, user))
-            useraccess = user.useraccess_set.all().filter(content_type=ct).filter(object_id=self.id)
             for ua in useraccess:
                 if ua.character == char:
                     logger.debug("User %s already has CharacterAccess rule %s applied to %s" % (user, self, char))
                 else:
                     logger.info("Characteraccess %s has changed character. Deleting useraccess %s" % (self, ua))
                     ua.delete()
-            else:
-                logger.info("CorpAccess rule %s applies to user %s by character %s. Assigning UserAccess model." % (self, char.user, char))
+            if not useraccess.filter(user=char.user).exists():
+                logger.info("CharacterAccess rule %s applies to user %s by character %s. Assigning UserAccess model." % (self, char.user, char))
                 ua = UserAccess(user=user, character=char)
                 ua.set_rule(self)
                 ua.save()
         else:
             logger.debug("No user set for character %s. Unable to apply CharacterAccess %s" % (char, ca))
+            useraccess.all().delete()
 
 class StandingAccessRule(models.Model):
 

@@ -72,7 +72,7 @@ def post_save_eveapikeypair(sender, instance, update_fields=[], *args, **kwargs)
                 char.assign_user()
     else:
         logger.debug("Queueing update for %s" % instance)
-        update_api_key(instance)
+        instance.update()
         for char in instance.characters.all():
             char.assign_user()
             if char.user:

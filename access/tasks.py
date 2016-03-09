@@ -41,13 +41,13 @@ def assign_access(user):
         if CharacterAccessRule.objects.filter(character=char).exists():
             ca = CharacterAccessRule.objects.get(character=char)
             logger.debug("CharacterAccess rule exists for character %s. Assigning." % char)
-            generate_useraccess_by_characteraccess(ca)
+            ca.generate_useraccess()
         if EVECorporation.objects.filter(id=char.corp_id).exists():
             logger.debug("Corp model exists for character %s corp %s" % (char, char.corp_name))
             corp = EVECorporation.objects.get(id=char.corp_id)
             if CorpAccessRule.objects.filter(corp=corp).exists():
                 ca = CorpAccessRule.objects.get(corp=corp)
-                if ca.access.filter(user=user).filter(character=char).exists() is False:
+                if not ca.access.filter(user=user).filter(character=char).exists():
                     logger.info("CorpAccess rule %s applies to user %s by character %s. Assigning UserAccess model." % (ca, user, char))
                     ua = UserAccess(user=user, character=char)
                     ua.set_rule(ca)
@@ -57,7 +57,7 @@ def assign_access(user):
             alliance = EVEAlliance.objects.get(id=char.alliance_id)
             if AllianceAccessRule.objects.filter(alliance=alliance).exists():
                 aa = AllianceAccessRule.objects.get(alliance=alliance)
-                if aa.access.filter(user=user).filter(character=char).exists() is False:
+                if not aa.access.filter(user=user).filter(character=char).exists():
                     logger.info("AllianceAccess rule %s applies to user %s by character %s. Assigning UserAccess model." % (aa, user, char))
                     ua = UserAccess(user=user, character=char)
                     ua.set_rule(aa)
