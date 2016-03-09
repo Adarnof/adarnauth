@@ -64,89 +64,6 @@ def assign_access(user):
                     ua.save()
     logger.debug("Finished generating useraccess models for user %s" % user)
 
-@shared_task
-def generate_useraccess_by_characteraccess(ca):
-    ct = ContentType.objects.get_for_model(ca)
-    logger.debug("Assigning UserAccess by CharacterAccess rule %s" % ca)
-    char = ca.character
-    if char.user:
-        user = char.user
-        logger.debug("Character for CharacterAccess rule %s has user %s assigned." % (ca, user))
-        useraccess = user.useraccess_set.all().filter(content_type=ct).filter(object_id=ca.id)
-        for ua in useraccess:
-            if ua.character == char:
-                logger.debug("User %s already has CharacterAccess rule %s applied to %s" % (user, ca, char))
-                break
-            else:
-                logger.info("Characteraccess %s has changed character. Deleting useraccess %s" % (ca, ua))
-                ua.delete()
-                break
-        else:
-            logger.info("CorpAccess rule %s applies to user %s by character %s. Assigning UserAccess model." % (ca, char.user, char))
-            ua = UserAccess(user=user, character=char)
-            ua.set_rule(ca)
-            ua.save()
-    else:
-        logger.debug("No user set for character %s. Unable to apply CharacterAccess %s" % (char, ca))
-
-@shared_task
-def generate_useraccess_by_corpaccess(ca):
-    ct = ContentType.objects.get_for_model(ca)
-    logger.debug("Assigning UserAccess by CorpAccess rule %s" % ca)
-    characters = EVECharacter.objects.filter(corp_id=ca.corp.id)
-    useraccess = UserAccess.objects.filter(content_type=ct).filter(object_id=ca.id)
-    for char in characters:
-        if not char.user:
-            logger.debug("CorpAccess %s applies to character %s but they have no user." % (ca, char))
-            continue
-        if useraccess.filter(character=char).exists():
-            logger.debug("CorpAccess %s already applied to character %s" % (ca, char))
-            continue
-        logger.info("Applying CorpAccess %s to user %s through character %s" % (ca, char.user, char))
-        ua = UserAccess(user=char.user, character=char)
-        ua.set_rule(ca)
-        ua.save()
-    for ua in useraccess:
-        if not ua.character in characters:
-            logger.info("CorpAccess %s no longer applies to %s because %s is not in corp" % (ca, ua.user, ua.character))
-            ua.delete()
-            continue
-        if ua.character.user != ua.user:
-            logger.info("CorpAccess %s no longer applies to %s because UserAccess and Character %s users don't match" % (ca, ua.user, ua.character))
-            ua.delete()
-            continue
-        logger.debug("UserAccess %s confirmed still valid." % ua)
-    logger.debug("Completed assigning CorpAccess rule %s to users." % ca)
-
-@shared_task
-def generate_useraccess_by_allianceaccess(aa):
-    ct = ContentType.objects.get_for_model(aa)
-    logger.debug("Assigning UserAccess by AllianceAccess rule %s" % aa)
-    characters = EVECharacter.objects.filter(alliance_id=aa.alliance.id)
-    useraccess = UserAccess.objects.filter(content_type=ct).filter(object_id=aa.id)
-    for char in characters:
-        if not char.user:
-            logger.debug("AllianceAccess %s applies to character %s but they have no user." % (aa, char))
-            continue
-        if useraccess.filter(character=char).exists():
-            logger.debug("AllianceAccess %s already applied to character %s" % (aa, char))
-            continue
-        logger.info("Applying AllianceAccess %s to user %s through character %s" % (aa, char.user, char))
-        ua = UserAccess(user=char.user, character=char)
-        ua.set_rule(aa)
-        ua.save()
-    for ua in useraccess:
-        if not ua.character in characters:
-            logger.info("AllianceAccess %s no longer applies to %s because %s is not in alliance" % (aa, ua.user, ua.character))
-            ua.delete()
-            continue
-        if ua.character.user != ua.user:
-            logger.info("AllianceAccess %s no longer applies to %s because UserAccess and Character %s users don't match" % (aa, ua.user, ua.character))
-            ua.delete()
-            continue
-        logger.debug("UserAccess %s confirmed still valid." % ua)
-    logger.debug("Completed assigning AllianceAccess rule %s to users." % aa)
-
 @receiver(post_delete, sender=UserAccess)
 def post_delete_useraccess(sender, instance, *args, **kwargs):
     if instance.user:
@@ -257,17 +174,17 @@ def post_save_useraccess(sender, instance, *args, **kwargs):
 @receiver(post_save, sender=CharacterAccessRule)
 def post_save_characteraccess(sender, instance, *args, **kwargs):
     logger.debug("Received post_save signal from characteraccess %s" % instance)
-    generate_useraccess_by_characteraccess(instance)
+    instance.generate_useraccess()
 
 @receiver(post_save, sender=CorpAccessRule)
 def post_save_corpaccess(sender, instance, *args, **kwargs):
     logger.debug("Received post_save signal from corpaccess %s" % instance)
-    generate_useraccess_by_corpaccess(instance)
+    instance.generate_useraccess()
 
 @receiver(post_save, sender=AllianceAccessRule)
 def post_save_allianceaccess(sender, instance, *args, **kwargs):
     logger.debug("Received post_save signal from allianceaccess %s" % instance)
-    generate_useraccess_by_allianceaccess(instance)
+    instance.generate_useraccess()
 
 @receiver(user_created)
 def post_user_created(sender, user, *args, **kwargs):

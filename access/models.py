@@ -5,6 +5,9 @@ from eveonline.models import EVECharacter, EVECorporation, EVEAlliance, EVEStand
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from authentication.models import User
+import logging
+
+logger = logging.getLogger(__name__)
 
 class UserAccess(models.Model):
 
@@ -45,6 +48,35 @@ class CorpAccessRule(models.Model):
         output = 'corp %s' % self.corp
         return output.encode('utf-8')
 
+    def generate_useraccess(self):
+        ct = ContentType.objects.get_for_model(self)
+        logger.debug("Assigning UserAccess by CorpAccess rule %s" % self)
+        characters = EVECharacter.objects.filter(corp_id=self.corp.id)
+        useraccess = UserAccess.objects.filter(content_type=ct).filter(object_id=self.id)
+        for char in characters:
+            if not char.user:
+                logger.debug("CorpAccess %s applies to character %s but they have no user." % (self, char))
+                continue
+            if useraccess.filter(character=char).exists():
+                logger.debug("CorpAccess %s already applied to character %s" % (self, char))
+                continue
+            logger.info("Applying CorpAccess %s to user %s through character %s" % (self, char.user, char))
+            ua = UserAccess(user=char.user, character=char)
+            ua.set_rule(self)
+            ua.save()
+        for ua in useraccess:
+            if not ua.character in characters:
+                logger.info("CorpAccess %s no longer applies to %s because %s is not in corp" % (self, ua.user, ua.character))
+                ua.delete()
+                continue
+            if ua.character.user != ua.user:
+                logger.info("CorpAccess %s no longer applies to %s because UserAccess and Character %s users don't match" % (self, ua.user, ua.character))
+                ua.delete()
+                continue
+            logger.debug("UserAccess %s confirmed still valid." % ua)
+        logger.debug("Completed assigning CorpAccess rule %s to users." % self)
+
+
 class AllianceAccessRule(models.Model):
 
     alliance = models.OneToOneField(EVEAlliance, models.CASCADE)
@@ -55,6 +87,34 @@ class AllianceAccessRule(models.Model):
         output = 'alliance %s' % self.alliance
         return output.encode('utf-8')
 
+    def generate_useraccess(self):
+        ct = ContentType.objects.get_for_model(self)
+        logger.debug("Assigning UserAccess by AllianceAccess rule %s" % self)
+        characters = EVECharacter.objects.filter(alliance_id=self.alliance.id)
+        useraccess = UserAccess.objects.filter(content_type=ct).filter(object_id=self.id)
+        for char in characters:
+            if not char.user:
+                logger.debug("AllianceAccess %s applies to character %s but they have no user." % (self, char))
+                continue
+            if useraccess.filter(character=char).exists():
+                logger.debug("AllianceAccess %s already applied to character %s" % (self, char))
+                continue
+            logger.info("Applying AllianceAccess %s to user %s through character %s" % (self, char.user, char))
+            ua = UserAccess(user=char.user, character=char)
+            ua.set_rule(self)
+            ua.save()
+        for ua in useraccess:
+            if not ua.character in characters:
+                logger.info("AllianceAccess %s no longer applies to %s because %s is not in alliance" % (self, ua.user, ua.character))
+                ua.delete()
+                continue
+            if ua.character.user != ua.user:
+                logger.info("AllianceAccess %s no longer applies to %s because UserAccess and Character %s users don't match" % (self, ua.user, ua.character))
+                ua.delete()
+                continue
+            logger.debug("UserAccess %s confirmed still valid." % ua)
+        logger.debug("Completed assigning AllianceAccess rule %s to users." % self)
+
 class CharacterAccessRule(models.Model):
 
     character = models.OneToOneField(EVECharacter, models.CASCADE)
@@ -64,6 +124,28 @@ class CharacterAccessRule(models.Model):
     def __unicode__(self):
         output = 'character %s' % self.character
         return output.encode('utf-8')
+
+    def generate_useraccess(self):
+        ct = ContentType.objects.get_for_model(self)
+        logger.debug("Assigning UserAccess by CharacterAccess rule %s" % self)
+        char = self.character
+        if char.user:
+            user = char.user
+            logger.debug("Character for CharacterAccess rule %s has user %s assigned." % (self, user))
+            useraccess = user.useraccess_set.all().filter(content_type=ct).filter(object_id=self.id)
+            for ua in useraccess:
+                if ua.character == char:
+                    logger.debug("User %s already has CharacterAccess rule %s applied to %s" % (user, self, char))
+                else:
+                    logger.info("Characteraccess %s has changed character. Deleting useraccess %s" % (self, ua))
+                    ua.delete()
+            else:
+                logger.info("CorpAccess rule %s applies to user %s by character %s. Assigning UserAccess model." % (self, char.user, char))
+                ua = UserAccess(user=user, character=char)
+                ua.set_rule(self)
+                ua.save()
+        else:
+            logger.debug("No user set for character %s. Unable to apply CharacterAccess %s" % (char, ca))
 
 class StandingAccessRule(models.Model):
 
