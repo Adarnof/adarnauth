@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 from django.db import models
-from eveonline.models import EVECharacter, EVECorporation, EVEAlliance, EVEStanding
+from eveonline.models import EVECharacter, EVECorporation, EVEAlliance, EVEContact
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from authentication.models import User
@@ -147,7 +147,7 @@ class CharacterAccessRule(models.Model):
 
 class StandingAccessRule(models.Model):
 
-    standing = models.OneToOneField(EVEStanding, models.CASCADE)
+    standing = models.OneToOneField(EVEContact, models.CASCADE)
     access = GenericRelation(UserAccess)
 
     def __unicode__(self):

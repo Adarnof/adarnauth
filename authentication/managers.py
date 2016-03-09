@@ -1,6 +1,6 @@
 from django.contrib.auth.models import BaseUserManager
 from django import forms
-from eveonline.managers import EVEManager
+from eveonline.models import EVECharacter
 from .signals import user_created
 from datetime import datetime
 import logging
@@ -22,13 +22,13 @@ class UserManager(BaseUserManager):
         else:
             user.set_unusable_password()
             logger.debug("Setting unusable password for user.")
-        char = EVEManager.get_character_by_id(main_character_id)
+        char = EVECharacter.objects.get_by_id(main_character_id)
         logger.debug("Got character model %s for main character id %s" % (char, main_character_id))
         if not char:
             logger.error("Unable to create user with main character id %s - possibly bad id." % main_character_id)
             return None
         user.save()
-        EVEManager.assign_character_user(char, user)
+        char.assign_user()
         logger.debug("User created succesfully: %s" % str(user))
         user_created.send(sender=UserManager, user=user)
         return user

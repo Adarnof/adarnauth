@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from authentication.models import User
 from .models import UserAccess, CharacterAccessRule, CorpAccessRule, AllianceAccessRule
 from .forms import CharacterAccessForm, CorpAccessForm, AllianceAccessForm
-from eveonline.managers import EVEManager
+from eveonline.models import EVECharacter, EVECorporation, EVEAlliance
 from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
 import logging
 
@@ -42,7 +42,7 @@ def characteraccess_create(request):
         form = CharacterAccessForm(request.POST)
         logger.debug("Request type POST contains form, is valid: %s" % form.is_valid())
         if form.is_valid():
-            character = EVEManager.get_character_by_id(form.cleaned_data['id'])
+            character = EVECharacter.objects.get_by_id(form.cleaned_data['id'])
             if CharacterAccessRule.objects.filter(character=character).exists() is False:
                 ca = CharacterAccessRule(character=character)
                 logger.info("User %s creating access for %s" % (request.user, ca))
@@ -78,7 +78,7 @@ def corpaccess_create(request):
         form = CorpAccessForm(request.POST)
         logger.debug("Request type POST contains form, is valid: %s" % form.is_valid())
         if form.is_valid():
-            corp = EVEManager.get_corp_by_id(form.cleaned_data['id'])
+            corp = EVECorporation.objects.get_by_id(form.cleaned_data['id'])
             if CorpAccessRule.objects.filter(corp=corp).exists() is False:
                 ca = CorpAccessRule(corp=corp)
                 logger.info("User %s creating access for %s" % (request.user, ca))
@@ -114,7 +114,7 @@ def allianceaccess_create(request):
         form = AllianceAccessForm(request.POST)
         logger.debug("Request type POST contains form, is valid: %s" % form.is_valid())
         if form.is_valid():
-            alliance = EVEManager.get_alliance_by_id(form.cleaned_data['id'])
+            alliance = EVEAlliance.objects.get_by_id(form.cleaned_data['id'])
             if AllianceAccessRule.objects.filter(alliance=alliance).exists() is False:
                 aa = AllianceAccessRule(alliance=alliance)
                 logger.info("User %s creating access for %s" % (request.user, aa))

@@ -1,7 +1,7 @@
 from django.dispatch import receiver, Signal
 import logging
 from django.db.models.signals import post_delete, post_save, m2m_changed, pre_delete, pre_save
-from models import EVECharacter, EVECorporation, EVEAlliance, EVEStanding, EVEApiKeyPair
+from models import EVECharacter, EVECorporation, EVEAlliance, EVEContact, EVEApiKeyPair
 from tasks import assess_main_char_api_verified
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import Permission

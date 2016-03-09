@@ -5,6 +5,7 @@ import logging
 import evelink
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
+from managers import EVECharacterManager, EVECorporationManager, EVEAllianceManager, EVEContactManager
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,8 @@ class EVECharacter(models.Model):
     faction_id = models.PositiveIntegerField(null=True, blank=True)
     faction_name = models.CharField(max_length=254, null=True, blank=True)
     user = models.ForeignKey('authentication.User', null=True, on_delete=models.SET_NULL, blank=True, related_name='characters')
-    standing = GenericRelation('eveonline.EVEStanding', null=True)
+
+    objects = EVECharacterManager()
 
     def __unicode__(self):
         if self.name:
@@ -133,7 +135,8 @@ class EVECorporation(models.Model):
     alliance_name = models.CharField(max_length=254, null=True, blank=True)
     members = models.PositiveIntegerField(null=True, blank=True)
     ticker = models.CharField(max_length=254, null=True, blank=True)
-    standing = GenericRelation('eveonline.EVEStanding', null=True)
+
+    objects = EVECorporationManager()
 
     def __unicode__(self):
         if self.name:
@@ -149,8 +152,15 @@ class EVECorporation(models.Model):
             api = evelink.corp.Corp(a)
             try:
                 result = api.corporation_sheet(corp_id=self.id).result
+            except evelink.api.APIError as e:
+                if e.code == 523:
+                    logger.info("%s has closed. Deleting model" % self)
+                    self.delete()
+                else:
+                    logger.exception("Error occured retrieving corporation sheet for id %s - aborting update." % self.id, exc_info=True)
+                    return False
             except:
-                logger.exception("Error occured retrieving corporation sheet for id %s - likely bad corp id. Aborting update." % self.id, exc_info=True)
+                logger.exception("Error occured retrieving corporation sheet for id %s - aborting update." % self.id, exc_info=True)
                 return False
         if (not 'name' in result) or (not 'alliance' in result) or (not 'members' in result) or (not 'ticker' in result):
             logger.error("Passed corp result missing required fields for corp id %s. Aborting update." % self.id)
@@ -185,7 +195,8 @@ class EVEAlliance(models.Model):
     id = models.PositiveIntegerField(primary_key=True)
     name = models.CharField(max_length=254, null=True, blank=True)
     ticker = models.CharField(max_length=254, null=True, blank=True)
-    standing = GenericRelation('eveonline.EVEStanding', null=True)
+
+    objects = EVEAllianceManager()
 
     def __unicode__(self):
         if self.name:
@@ -197,21 +208,18 @@ class EVEAlliance(models.Model):
     def update(self, alliance_info=None):
         logger.debug("Updating alliance info for alliance id %s" % self.id)
         if not alliance_info:
-            logger.debug("Not passed API result. Grabbing from evelink")
-            api = evelink.eve.EVE()
-            result = api.alliances().result
-            if self.id in result:
-                alliance_info = result[self.id]
-            else:
-                logger.error("API result does not contain this alliance id %s. Aborting update." % self.id)
-                return False
+            logger.debug("Not passed API result. Grabbing from manager")
+            alliance_info = self.objects.get_info(self.id)
+        if alliance_info['corporationsCount'] == 0:
+            logger.info("%s has closed. Deleting model" % self)
+            self.delete()
         update_fields=[]
         if self.name != alliance_info['name']:
             self.name = alliance_info['name']
             update_fields.append('name')
-        if self.ticker != alliance_info['ticker']:
-            self.ticker = alliance_info['ticker']
-            update_fields.append('name')
+        if self.ticker != alliance_info['shortName']:
+            self.ticker = alliance_info['shortName']
+            update_fields.append('ticker')
         logger.info("Finished updating alliance info for id %s from api. Changed: %s" % (self.id, update_fields))
         if update_fields:
             self.save(update_fields=update_fields)
@@ -265,7 +273,7 @@ class EVEApiKeyPair(models.Model):
                 logger.exception("APIError occured while retrieving corp standings from api id %s" % id, exc_info=True)
                 return {}
         else:
-            raise ValueError('Only corp keys are supported')
+            raise NotImplementedError('Only corp keys are supported')
 
     def update(self):
         chars = []
@@ -330,16 +338,55 @@ class EVEApiKeyPair(models.Model):
                     logger.info("%s updated %s" % (self, update_fields))
                     self.save(update_fields=update_fields)
 
-class EVEStanding(models.Model):
-
-    standing = models.DecimalField(max_digits=3, decimal_places=1, null=True)
-    object_id = models.PositiveIntegerField()
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    content_object = GenericForeignKey('content_type', 'object_id')
-    source_api = models.ForeignKey(EVEApiKeyPair, on_delete=models.CASCADE)
+class EVEContactSet(models.Model):
+    source_api = models.OneToOneField(EVEApiKeyPair, on_delete=models.CASCADE, limit_choices_to={'type': 'corp'})
+    minimum_standing = models.IntegerField()
 
     def __unicode__(self):
-        output = "%s standing towards %s" % (self.standing, self.content_object)
+        output = "Standings above %s from %s" % (self.minimum_standing, self.source_api)
+        return output.encode('utf-8')
+
+    def update(self):
+        logger.debug("Updating %s" % self)
+        contact_dict = self.source_api.get_standings()
+        contacts = self.contacts.all()
+        logger.debug("Got %s contacts from API and %s contact models" % (len(contact_dict), len(contacts)))
+        for contact in contacts:
+            if not contact.object_id in contact_dict:
+                logger.info("Contact with %s no longer found on %s" % (contact, self.source_api))
+                contact.delete()
+            elif contact_dict[contact.object_id]['standing'] < self.minimum_standing:
+                logger.info("Contact with %s no longer meets minimum requirements of %s" % (contact, self))
+                contact.delete()
+            else:
+                logger.debug("Contact %s still valid" % contact)
+        for id in contact_dict:
+            if contact_dict[id]['standing'] >= self.minimum_standing:
+                if not contacts.filter(object_id=id).exists():
+                    contact = EVEContact.objects.create_from_api(contact_dict[id], self)
+                    logger.info("Created contact with %s from %s" % (contact, self))
+        logger.debug("Updated contacts from %s" % self)
+
+
+class EVEContact(models.Model):
+
+    TYPE_CHOICES = (
+        ('alliance', 'alliance'),
+        ('corp', 'corp'),
+        ('character', 'character'),
+    )
+
+    standing = models.DecimalField(max_digits=3, decimal_places=1, null=True)
+    object_id = models.IntegerField()
+    object_name = models.CharField(max_length=254, blank=True, null=True)
+    type = models.CharField(max_length=10, choices=TYPE_CHOICES, blank=True, null=True)
+    contact_source = models.ForeignKey(EVEContactSet, on_delete=models.CASCADE, related_name='contacts')
+
+    class Meta:
+        unique_together = ('object_id', 'contact_source')
+
+    def __unicode__(self):
+        output = "%s standing towards %s ID %s" % (self.standing, self.type, self.object_id)
         return output.encode('utf-8')
 
     def assign_object(self, object):
@@ -348,3 +395,5 @@ class EVEStanding(models.Model):
             self.content_object = object
         else:
             raise TypeError("Standing must be towards object of type EVECharacter, EVECorporation, EVEAlliance.")
+
+    objects = EVEContactManager()

@@ -1,128 +1,121 @@
-from models import EVECharacter, EVECorporation, EVEAlliance, EVEApiKeyPair
 import evelink.api
 import evelink.char
 import evelink.eve
 import evelink.corp
 import logging
+from django.db import models
+import requests
+import datetime
 
 logger = logging.getLogger(__name__)
 
+class EVEContactManager(models.Manager):
+    def create_from_api(dict, contact_source):
+        model = self.model
+        model.object_id = dict['id']
+        model.object_name = dict['name']
+        model.standing = dict['standing']
+        model.contact_set = contact_source
+        model.save()
+        return model
+
+class EVEBaseManager(models.Manager):
+    class Meta:
+        abstract = True
+
+    def check_id(self, id):
+        return False
+
+    def create(self, *args, **kwargs):
+        model = super(EVEBaseManager, self).create(*args, **kwargs)
+        if not self.check_id(model.id):
+            model.delete()
+            raise ValueError("Supplied ID is invalid")
+        model.update()
+        return model
+
+    def get_or_create_by_id(self, id):
+        if super(EVEBaseManager, self).get_queryset().filter(id=id).exists():
+            logger.debug("Returning existing model with id %s" % id)
+            return super(EVEBaseManager, self).get_queryset().get(id=id), False
+        else:
+            logger.debug("No model exists for id %s - triggering creation." % id)
+            return self.create(id=id), True
+
+    def get_by_id(self, id):
+        return self.get_or_create_by_id(id)[0]
+
+class EVECharacterManager(EVEBaseManager):
+    def check_id(self, id):
+        logger.debug("Checking if %s %s is valid character id" % (type(id), id))
+        id = int(id)
+        api = evelink.eve.EVE()
+        result = api.affiliations_for_characters(id).result[id]
+        if 'name' in result:
+            logger.debug("Determined character id %s is valid" % id)
+            return True
+        else:
+            logger.debug("Determined character id %s is invalid" % id)
+            return False
+
+class EVECorporationManager(EVEBaseManager):
+    def check_id(self, id):
+        logger.debug("Checking if %s %s is valid corp id" % (type(id), id))
+        id = int(id)
+        try:
+            a = evelink.api.API()
+            api = evelink.corp.Corp(a)
+            result = api.corporation_sheet(corp_id=id).result
+            logger.debug("Determined corp id %s is valid" % id)
+            return True
+        except evelink.api.APIError as e:
+            if e.code == 523:
+                logger.debug("Determined corp id %s is invalid" % id)
+                return False
+            else:
+                raise e
+
+class EVEAllianceManager(EVEBaseManager):
+
+    CREST_ALLIANCE_ENDPOINT = "https://public-crest.eveonline.com/alliances/%s/"
+
+    def create(self, *args, **kwargs):
+        model = super(EVEBaseManager, self).create(*args, **kwargs)
+        if not self.check_id(model.id):
+            model.delete()
+            raise ValueError("Supplied ID is invalid")
+        model.update(alliance_info=self.get_info(model.id))
+        return model
+
+    def check_id(self, id):
+        r = requests.get(self.CREST_ALLIANCE_ENDPOINT % id)
+        if r.status_code == 200:
+            return True
+        elif r.status_code == 403:
+            return False
+        else:
+            e = evelink.api.APIError()
+            e.code = r.status_code
+            e.message = "Unexpected CREST error occured"
+            e.expires = None
+            e.timestamp = datetime.datetime.utcnow()
+            raise e
+
+    def get_info(self, id):
+        r = requests.get(self.CREST_ALLIANCE_ENDPOINT % id)
+        if r.status_code == 200:
+            return r.json()
+        elif r.status_code == 403:
+            raise ValueError("Invalid alliance ID supplied")
+        else:
+            e = evelink.api.APIError()
+            e.code = r.status_code
+            e.message = "Unexpected CREST error occured"
+            e.expires = None
+            e.timestamp = datetime.datetime.utcnow()
+            raise e
+
 class EVEManager:
-    @staticmethod
-    def get_character_by_id(character_id):
-        if not type(character_id) is int:
-            try:
-                logger.warn("get_character_by_id passed %s, requires int. Converting %s." % (type(character_id), character_id))
-                character_id = int(character_id)
-            except:
-                logger.error("Unable to cast character_id to int. Returning None.")
-                return None
-        if EVECharacter.objects.filter(id=character_id).exists():
-            logger.debug("Returning existing character model with id %s" % character_id)
-            return EVECharacter.objects.get(id=character_id)
-        else:
-            logger.debug("No character model exists for id %s - triggering creation." % character_id)
-            chars = EVEManager.create_characters([character_id])
-            if chars:
-                logger.debug("Returning new character model with id %s" % character_id)
-                return chars[0]
-            else:
-                logger.error("Unable to create character with id %s - returning None" % character_id)
-                return None
-
-    @staticmethod
-    def create_characters(character_ids):
-        chars = []
-        for id in character_ids:
-            char, created = EVECharacter.objects.get_or_create(id = id)
-            if created:
-                logger.info("Created model for character id %s" % id)
-                if char.update():
-                    chars.append(char)
-                else:
-                    logger.error("Character model population failed for id %s - possible bad id. Deleting." % id)
-                    char.delete()
-            else:
-                logger.warn("Attempting to create existing model for character id %s" % id)
-                char.update()
-                chars.append(char)
-        return chars
-
-    @staticmethod
-    def update_characters(character_ids):
-        for id in character_ids:
-            EVEManager.get_character_by_id(id).update()
-
-    @staticmethod
-    def assign_character_user(character, user):
-        if character.user:
-            logger.warn("Reassigning character from user %s to %s" % (character.user, user))
-        character.user = user
-        character.save(update_fields=['user'])
-        logger.info("Assigned character %s to user %s" % (character, user))
-
-    @staticmethod
-    def get_corp_by_id(corp_id):
-        if not type(corp_id) is int:
-            try:
-                logger.warn("get_corp_by_id passed %s, requires int. Converting %s." % (type(corp_id), corp_id))
-                corp = int(corp_id)
-            except:
-                logger.error("Unable to cast corp_id to int. Returning None.")
-                return None
-        if EVECorporation.objects.filter(id=corp_id).exists():
-            logger.debug("Returning existing corp model with id %s" % corp_id)
-            return EVECorporation.objects.get(id=corp_id)
-        else:
-            logger.debug("No corp model exists for id %s - triggering creation." % corp_id)
-            corps = EVEManager.create_corps([corp_id])
-            if corps:
-                logger.debug("Returning new corp model with id %s" % corp_id)
-                return corps[0]
-            else:
-                logger.error("Unable to create corp with id %s - returning None" % corp_id)
-                return None            
-
-    @staticmethod
-    def create_corps(corp_ids):
-        corps = []
-        for id in corp_ids:
-            corp, created = EVECorporation.objects.get_or_create(id = id)
-            if created:
-                logger.info("Created model for corp id %s" % id)
-                if corp.update():
-                    corps.append(corp)
-                else:
-                    logger.error("Corp model population failed for id %s - possible bad id. Deleting." % id)
-                    corp.delete()                    
-            else:
-                logger.warn("Attempting to create existing model for corp id %s" % id)
-                corp.update()
-                corps.append(corp)
-        return corps
-
-    @staticmethod
-    def update_corps(corp_ids):
-        for id in corp_ids:
-            EVEManager.get_corp_by_id(id).update()
-
-    @staticmethod
-    def get_alliance_by_id(alliance_id):
-        if not type(alliance_id) is int:
-            try:
-                logger.warn("get_alliance_by_id passed %s, requires int. Converting %s." % (type(alliance_id), alliance_id))
-                alliance_id = int(alliance_id)
-            except:
-                logger.error("Unable to cast alliance_id to int. Returning None.")
-                return None
-        if EVEAlliance.objects.filter(id=alliance_id).exists():
-            logger.debug("Returning existing alliance model with id %s" % alliance_id)
-            return EVEAlliance.objects.get(id=alliance_id)
-        else:
-            logger.debug("No alliance model exists for id %s - triggering creation." % alliance_id)
-            EVEManager.create_alliances([alliance_id])
-            logger.debug("Returning new alliance model with id %s" % alliance_id)
-            return EVEAlliance.objects.get(id=alliance_id)
 
     @staticmethod
     def create_alliances(alliance_ids):

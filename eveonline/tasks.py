@@ -1,7 +1,7 @@
 from celery.task import periodic_task
 from celery import shared_task
 from celery.task.schedules import crontab
-from .models import EVECharacter, EVECorporation, EVEAlliance, EVEStanding, EVEApiKeyPair
+from .models import EVECharacter, EVECorporation, EVEAlliance, EVEContact, EVEApiKeyPair
 from authentication.models import User
 import evelink
 import logging
