@@ -9,13 +9,14 @@ logger = logging.getLogger(__name__)
 
 # Create your views here.
 def sso_login(request):
-    code = request.GET['code']
-    state = request.GET['state']
+    code = request.GET.get('code', None)
+    state = request.GET.get('state', None)
     logger.debug("SSO redirect received for state %s with code %s" % (state, code))
-    if CallbackRedirect.objects.filter(session__session_key=request.session.session_key).exists():
-        model = CallbackRedirect.objects.get(session__session_key=request.session.session_key)
+    if CallbackRedirect.objects.filter(hash=state).exists():
+        model = CallbackRedirect.objects.get(hash=state)
         if model.action == 'login':
             if model.validate(request):
+                model.delete()
                 user = authenticate(code=code)
                 if user is not None:
                     if user.is_active:
@@ -31,8 +32,11 @@ def sso_login(request):
                     logger.info("Login unsuccesful: no user model returned.")
                     return redirect('auth_login_user')
             else:
+                model.delete()
                 logger.warn("Failed to validate SSO callback")
                 return redirect('auth_login_user')
+        elif model.action == 'verify':
+            return redirect(model.url + '?state=' + state + '&code=' + code)
         else:
             logger.debug("State %s not implemented." % state)
             return redirect('auth_login_user')
@@ -43,12 +47,12 @@ def sso_login(request):
 def login_view(request):
     if not request.session.exists(request.session.session_key):
         request.session.create() 
-    if CallbackRedirect.objects.filter(session=request.session).exists() is False:
+    if CallbackRedirect.objects.filter(session_key=request.session.session_key).exists() is False:
         model = CallbackRedirect()
         model.populate(request)
         model.save()
     else:
-        model = CallbackRedirect.objects.get(session=request.session)
+        model = CallbackRedirect.objects.get(session_key=request.session.session_key)
         if model.action != 'login':
             model.action = 'login'
             model.save()

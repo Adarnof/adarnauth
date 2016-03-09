@@ -62,16 +62,13 @@ class CallbackRedirect(models.Model):
     )
 
     salt = models.CharField(max_length=32)
+    hash = models.CharField(max_length=128)
     url = models.CharField(max_length=254)
-    session = models.OneToOneField(Session, on_delete=models.CASCADE)
     action = models.CharField(max_length=6, default='login', choices=ACTION_CHOICES)
+    session_key = models.CharField(max_length=254)
 
-    @property
-    def hash(self):
-        return self.__generate_hash()
-
-    def __generate_hash(self):
-        return hashlib.sha512(self.session.session_key + self.salt).hexdigest()
+    def __generate_hash(self, session_key):
+        return hashlib.sha512(session_key + self.salt).hexdigest()
 
     def __generate_salt(self):
         return uuid.uuid4().hex
@@ -87,17 +84,17 @@ class CallbackRedirect(models.Model):
             request.session.create()
         salt = self.__generate_salt()
         self.salt = salt
-        self.session = Session.objects.get(session_key=request.session.session_key)
-        url = request.GET.get('next', '/')
-        self.url = resolve(request.GET['next']).url_name
+        self.hash = self.__generate_hash(request.session.session_key)
+        self.url = request.GET.get('next', '/')
+        self.session_key = request.session.session_key
 
     def validate(self, request):
         if not request.session.exists(request.session.session_key):
             request.session.create()
         req_hash = self.__generate_hash_by_request(request, self.salt)
-        state =  request.GET.get('state', None)
+        state = request.GET.get('state', None)
         if req_hash == request.GET['state']:
-            if self.__generate_hash() == req_hash:
+            if self.hash == req_hash:
                 return True
         return False
 
@@ -105,8 +102,6 @@ class CallbackRedirect(models.Model):
         if not request.session.exists(request.session.session_key):
             request.session.create()
         if self.validate(request):
-            self.delete()
             return self.url
         else:
-            self.delete()
             return None

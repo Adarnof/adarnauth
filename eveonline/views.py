@@ -21,7 +21,7 @@ def api_key_add(request):
             if EVEApiKeyPair.objects.filter(id=id).exists():
                 if EVEApiKeyPair.objects.filter(id=id).filter(owner__isnull=True).exists():
                     logger.info("User %s entered existing key %s missing owner - redirecting to SSO verification" % (request.user, EVEApiKeyPair.objects.get(id=id)))
-                    return redirect(api_key_verify, id)
+                    return redirect(reverse(api_key_verify, args=[id]))
                 else:
                     logger.warn("User %s attempting to duplicate %s" % (request.user, EVEApiKeyPair.objects.get(id=id)))
                     form.add_error(None, 'Key with ID %s already claimed')
@@ -67,35 +67,45 @@ def api_key_update(request, api_id):
 def api_key_verify(request, api_id):
     logger.debug("api_key_verify called by user %s for api_id %s" % (request.user, api_id))
     api = get_object_or_404(EVEApiKeyPair, id=api_id)
-    if request.method == 'POST':
-        code = request.get['code']
-        if CallbackRedirect.objects.filter(session__session_key=request.session.session_key).filter(action='verify').exists():
-            model = CallbackRedirect.objects.get(session__session_key=request.session.session_key, action='verify')
+    if api.owner:
+        logger.warn("User %s attempting to re-verify %s with owner %s" % (request.user, api, api.owner))
+        return redirect('auth_profile')
+    code = request.GET.get('code', None)
+    state = request.GET.get('state', None)
+    logger.debug(code)
+    logger.debug(state)
+    if code and state:
+        if CallbackRedirect.objects.filter(session_key=request.session.session_key).filter(action='verify').exists():
+            model = CallbackRedirect.objects.get(session_key=request.session.session_key, action='verify')
             if model.validate(request):
+                model.delete()
                 character_id = get_character_id_from_sso_code(code)
                 if character_id:
                     if api.characters.filter(id=character_id).exists():
                         logger.info("User %s verified %s via SSO" % (request.user, api))
                         api.owner = request.user
-                        api.save(update_fields=['user'])
+                        api.save(update_fields=['owner'])
                     else:
                         logger.warn("User %s failed to verify %s via SSO: authorized character not found on key" % (request.user, api))
                 else:
                     logger.warn("User %s failed to verify %s via SSO: failed to retrieve character id from code exchange" % (request.user, api))
             else:
                 logger.warn("Failed to validate SSO callback for user %s verification of %s" % (request.user, api))
+                model.delete()
         else:
             logger.warn("Failed to locate CallbackRedirect for user %s verification of %s" % (request.user, api))
         return redirect('auth_profile')
     else:
-        if CallbackRedirect.objects.filter(session__session_key=request.session.session_key).exists():
-            model = CallbackRedirect.objects.get(session__session_key=request.session.session_key)
+        if CallbackRedirect.objects.filter(session_key=request.session.session_key).exists():
+            model = CallbackRedirect.objects.get(session_key=request.session.session_key)
             if model.action != 'verify':
                 model.action = 'verify'
                 model.save()
         else:
-            url = reverse(api_key_verify, args=api_id)
+            url = reverse(api_key_verify, args=[api_id])
+            request.GET._mutable = True
             request.GET['next'] = url
+            request.GET._mutable = False
             model = CallbackRedirect()
             model.populate(request)
             model.action = "verify"
