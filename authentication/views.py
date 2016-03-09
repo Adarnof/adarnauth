@@ -56,7 +56,7 @@ def login_view(request):
         if model.action != 'login':
             model.action = 'login'
             model.save()
-    return render(request, 'public/login.html', {'state':model.hash})
+    return render(request, 'public/login.html', {'title':'Login', 'state':model.hash})
 
 def logout_view(request):
     logout(request)

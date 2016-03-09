@@ -110,4 +110,9 @@ def api_key_verify(request, api_id):
             model.populate(request)
             model.action = "verify"
             model.save()
-        return render(request, 'public/login.html', {'state': model.hash})
+        context = {
+            'title': 'Verify API Key',
+            'extra_text': 'Please authenticate as a character from %s to verify ownership.' % api,
+            'state': model.hash,
+        }
+        return render(request, 'public/login.html', context=context)
