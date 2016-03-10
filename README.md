@@ -16,11 +16,11 @@ Started as a rewrite of the core of AllianceAuth but has ballooned to a standalo
  - [x] Corp
    - [x] Fetch from public API
    - [x] Async update task
-   - [ ] Handle corp closure
+   - [x] Handle corp closure
  - [x] Alliance
    - [x] Fetch from public API
    - [x] Async update task
-   - [ ] Handle alliance closure
+   - [x] Handle alliance closure
  - [x] API Key
    - [x] Update from authorized API
    - [x] Populate characters
