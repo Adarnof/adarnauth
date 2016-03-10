@@ -26,9 +26,9 @@ Started as a rewrite of the core of AllianceAuth but has ballooned to a standalo
    - [x] Populate characters
    - [x] Populate corp
    - [x] API verified permission
-   - [ ] Verify via SSO
- - [ ] Standings
-   - [ ] Pull from authorized API
+   - [x] Verify via SSO
+ - [x] Standings
+   - [x] Pull from authorized API
 
 ### Access Rules
 
