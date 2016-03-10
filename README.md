@@ -53,8 +53,8 @@ Started as a rewrite of the core of AllianceAuth but has ballooned to a standalo
 
  - [x] Process SSO callback
  - [x] Generate missing user accounts
- - [ ] Internal redirect
-   - [ ] Hash matching
+ - [x] Internal redirect
+   - [x] Hash matching
    - [x] Session identity verification
    - [x] View redirect
    - [x] Auto-cleanup
