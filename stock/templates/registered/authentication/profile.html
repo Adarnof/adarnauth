@@ -179,6 +179,16 @@
                                         <td class="text-center">{{ char.alliance_name }}</td>
                                     </tr>
                                 {% endfor %}
+                                {% if api.corp %}
+                                    <tr>
+                                        <td class="text-center">
+                                            <img class="ra-avatar img-responsive" src="https://image.eveonline.com/Corporation/{{ api.corp.id }}_32.png">
+                                        </td>
+                                        <td class="text-center"></td>
+                                        <td class="text-center">{{ api.corp.name }}</td>
+                                        <td class="text-center">{{ api.corp.alliance_name }}</td>
+                                    </tr>
+                                {% endif %}
                             </table>
                         </div>
                     {% endfor %}
