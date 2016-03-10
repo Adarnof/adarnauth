@@ -10,12 +10,12 @@ import datetime
 logger = logging.getLogger(__name__)
 
 class EVEContactManager(models.Manager):
-    def create_from_api(dict, contact_source):
-        model = self.model
+    def create_from_api(self, dict, contact_source):
+        model = self.model()
         model.object_id = dict['id']
         model.object_name = dict['name']
         model.standing = dict['standing']
-        model.contact_set = contact_source
+        model.contact_source = contact_source
         model.save()
         return model
 

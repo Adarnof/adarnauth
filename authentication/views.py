@@ -68,21 +68,21 @@ def profile_view(request):
     main = request.user.main_character
     apis = request.user.eveapikeypair_set.all()
     orphans = []
-    unclaimed = []
+    unclaimed = set([])
     for char in request.user.characters.all():
         if char.apis.all().exists():
             for api in char.apis.filter(owner__isnull=True):
-                unclaimed.append(api)
+                unclaimed.add(api)
         else:
             orphans.append(char)
-    contested = []
+    contested = set([])
     for api in apis:
         for char in api.characters.exclude(user=request.user):
             if User.objects.filter(main_character_id=char.id).exists():
                 char_main = User.objects.get(main_character_id=char.id)
             else:
                 char_main = None
-            contested.append((char, char_main))
+            contested.add((char, char_main))
     ua = request.user.useraccess_set.all()
     logger.debug("Retrieved %s apis with %s orphans %s contested and %s unclaimed for %s" % (len(apis), len(orphans), len(contested), len(unclaimed), request.user))
     context = {

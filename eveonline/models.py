@@ -264,11 +264,10 @@ class EVEApiKeyPair(models.Model):
         if self.type == 'corp':
             try:
                 logger.debug("Getting corp standings with api id %s" % id)
-                api = evelink.api.API(api_key=(id, vcode))
+                api = evelink.api.API(api_key=(self.id, self.vcode))
                 corp = evelink.corp.Corp(api=api)
-                corpinfo = corp.contacts()
-                results = corpinfo[0]
-                return results
+                corpinfo = corp.contacts().result
+                return corpinfo
             except evelink.api.APIError as error:
                 logger.exception("APIError occured while retrieving corp standings from api id %s" % id, exc_info=True)
                 return {}
@@ -301,9 +300,11 @@ class EVEApiKeyPair(models.Model):
                     logger.info("Character %s discovered on %s" % (char, self))
                     self.characters.add(char)
             if self.type == 'corp':
-                api_corp = account.corp().result
-                corp, c = EVECorporation.objects.get_or_create(id=api_corp['id'])
-                corp.update(api_corp[corp.id])
+                for id in key_info['characters']:
+                    corp_id = key_info['characters'][id]['corp']['id']
+                    break
+                api_corp = evelink.corp.Corp(api=api).corporation_sheet(corp_id=corp_id).result
+                corp = EVECorporation.objects.get_by_id(corp_id)
                 if self.corp != corp:
                     self.corp = corp
                     update_fields.append('corp')
@@ -329,7 +330,7 @@ class EVEApiKeyPair(models.Model):
                     self.is_valid=False
                     update_fields.append('is_valid')
                 if self.characters.all().exists():
-                    for char in self.characters:
+                    for char in self.characters.all():
                         self.characters.remove(char)
                 if self.corp:
                     self.corp = None
@@ -339,8 +340,15 @@ class EVEApiKeyPair(models.Model):
                     self.save(update_fields=update_fields)
 
 class EVEContactSet(models.Model):
+    LEVEL_CHOICES = (
+        ('personal', 'character'),
+        ('corp', 'corporation'),
+        ('alliance', 'alliance'),
+    )
+
     source_api = models.OneToOneField(EVEApiKeyPair, on_delete=models.CASCADE, limit_choices_to={'type': 'corp'})
     minimum_standing = models.IntegerField()
+    level = models.CharField(max_length=10, choices=LEVEL_CHOICES)
 
     def __unicode__(self):
         output = "Standings above %s from %s" % (self.minimum_standing, self.source_api)
@@ -348,7 +356,10 @@ class EVEContactSet(models.Model):
 
     def update(self):
         logger.debug("Updating %s" % self)
-        contact_dict = self.source_api.get_standings()
+        all_contact_dict = self.source_api.get_standings()
+        contact_dict = {}
+        if self.level in all_contact_dict:
+            contact_dict = all_contact_dict[self.level]
         contacts = self.contacts.all()
         logger.debug("Got %s contacts from API and %s contact models" % (len(contact_dict), len(contacts)))
         for contact in contacts:
@@ -386,7 +397,7 @@ class EVEContact(models.Model):
         unique_together = ('object_id', 'contact_source')
 
     def __unicode__(self):
-        output = "%s standing towards %s ID %s" % (self.standing, self.type, self.object_id)
+        output = "%s standing towards %s (%s)" % (self.standing, self.object_name, self.object_id)
         return output.encode('utf-8')
 
     def assign_object(self, object):
