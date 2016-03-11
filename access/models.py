@@ -143,7 +143,7 @@ class ContactAccess(models.Model, BaseAccessRule):
     def __unicode__(self):
         return "%s from API" % self.contact
 
-    def __check_if_applies_to_character(self, char):
+    def check_if_applies_to_character(self, char):
         for attr in self.attrs:
             if getattr(char, attr) == self.contact.object_id:
                 logger.debug("%s applies to %s by attribute %s" % (self, char, attr))

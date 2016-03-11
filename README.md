@@ -38,8 +38,8 @@ Started as a rewrite of the core of AllianceAuth but has ballooned to a standalo
    - [x] Auto-populate
  - [x] Alliance
    - [x] Auto-populate
- - [ ] Standing
-   - [ ] Auto-populate
+ - [x] Standing
+   - [x] Auto-populate
  - [x] Site access permission
 
 ### Groups
@@ -79,5 +79,11 @@ Started as a rewrite of the core of AllianceAuth but has ballooned to a standalo
    - [ ] Front-end creation
    - [ ] Signals
  - [ ] Teamspeak?
+
+### Admin Site
+
+Front-end settings are going away because the admin site can already do it, and handles permissions much better than I ever could.
+
+Group management will stay web-based because you don't want group admins to be staff, that's scary.
 
 # Suggestions?

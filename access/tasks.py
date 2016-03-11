@@ -137,6 +137,11 @@ def useraccess_check_on_character_blind_save(sender, character, *args, **kwargs)
                 if u.access_rule.alliance.id != character.alliance_id:
                     logger.info("Useraccess %s character alliance does not match allianceaccess rule. Deleting" % u)
                     u.delete()
+            elif u.content_type == ContentType.objects.get_for_model(ContactAccess):
+                logger.debug("Useraccess %s applied based on standingaccess - verifying still applies to character.")
+                if not u.access_rule.check_if_applies_to_character(u.character):
+                    logger.info("Useraccess %s character does not match contactaccess rule. Deleting" % u)
+                    u.delete()
             else:
                 logger.warn("Useraccess %s has no applied rule. Deleting." % u)
                 u.delete()
@@ -194,6 +199,7 @@ def post_user_created(sender, user, *args, **kwargs):
 @receiver(post_save, sender=StandingAccessRule)
 def post_save_standingaccess(sender, instance, *args, **kwargs):
     logger.debug("Received post_save signal from standingaccess %s" % instance)
+    instance.generate_useraccess()
     instance.generate_contactaccess()
 
 @receiver(post_save, sender=ContactAccess)
