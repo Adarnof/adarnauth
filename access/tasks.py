@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from celery import shared_task
 import logging
 from django.contrib.contenttypes.models import ContentType
-from access.models import UserAccess, CharacterAccessRule, CorpAccessRule, AllianceAccessRule
+from access.models import UserAccess, CharacterAccessRule, CorpAccessRule, AllianceAccessRule, StandingAccessRule, ContactAccess
 from eveonline.models import EVECharacter, EVECorporation, EVEAlliance
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
@@ -190,3 +190,13 @@ def post_save_allianceaccess(sender, instance, *args, **kwargs):
 def post_user_created(sender, user, *args, **kwargs):
     logger.debug("Received user_created signal from user %s" % user)
     assign_access(user)
+
+@receiver(post_save, sender=StandingAccessRule)
+def post_save_standingaccess(sender, instance, *args, **kwargs):
+    logger.debug("Received post_save signal from standingaccess %s" % instance)
+    instance.generate_contactaccess()
+
+@receiver(post_save, sender=ContactAccess)
+def post_save_contactaccess(sender, instance, *args, **kwargs):
+    logger.debug("Received post_save signal from contactaccess %s" % instance)
+    instance.generate_useraccess()

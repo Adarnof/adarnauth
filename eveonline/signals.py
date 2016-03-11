@@ -1,7 +1,7 @@
 from django.dispatch import receiver, Signal
 import logging
 from django.db.models.signals import post_delete, post_save, m2m_changed, pre_delete, pre_save
-from models import EVECharacter, EVECorporation, EVEAlliance, EVEContact, EVEApiKeyPair
+from models import EVECharacter, EVECorporation, EVEAlliance, EVEContact, EVEApiKeyPair, EVEContactSet
 from tasks import assess_main_char_api_verified
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import Permission
@@ -110,3 +110,32 @@ def post_delete_evecharacter(sender, instance, *args, **kwargs):
 def pre_delete_eveapikeypair(sender, instance, *args, **kwargs):
     logger.debug("Received pre_delete signal from %s" % instance)
     instance.characters.clear()
+
+@receiver(post_save, sender=EVECorporation)
+def post_save_evecorporation(sender, instance, update_fields=[], *args, **kwargs):
+    logger.debug("Received post_save signal from %s" % instance)
+    if not update_fields:
+        logger.debug("Not passed update_fields. Triggering model update")
+        instance.update()
+
+@receiver(post_save, sender=EVEAlliance)
+def post_save_evealliance(sender, instance, update_fields=[], *args, **kwargs):
+    logger.debug("Received post_save signal from %s" % instance)
+    if not update_fields:
+        logger.debug("Not passed update_fields. Triggering model update")
+        instance.update()
+
+@receiver(post_save, sender=EVECharacter)
+def post_save_evecharacter(sender, instance, update_fields=[], *args, **kwargs):
+    logger.debug("Received post_save signal from %s" % instance)
+    if not update_fields:
+        logger.debug("Not passed update_fields. Triggering model update")
+        instance.update()
+
+@receiver(post_save, sender=EVEContactSet)
+def post_save_evecontactset(sender, instance, update_fields=[], *args, **kwargs):
+    logger.debug("Received post_save signal from %s" % instance)
+    if not update_fields:
+        logger.debug("Not passed update_fields. Triggering model update")
+        instance.update()
+
