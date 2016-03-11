@@ -140,6 +140,9 @@ class ContactAccess(models.Model, BaseAccessRule):
 
     attrs = ['id', 'corp_id', 'alliance_id', 'faction_id']
 
+    class Meta:
+        unique_together = (('contact', 'standing_access'),)
+
     def __unicode__(self):
         return "%s from API" % self.contact
 
