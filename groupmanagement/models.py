@@ -72,7 +72,7 @@ class ExtendedGroup(models.Model):
         return True
 
     def can_remove_member(self, user, member):
-        if user == self.owner:
+        if member == self.owner:
             return False
         elif member in self.admins.all():
             return False

@@ -46,14 +46,20 @@ class EVEBaseManager(models.Manager):
         return self.get_or_create_by_id(id)[0]
 
 class EVECharacterManager(EVEBaseManager):
+    DOOMHEIM_CORP_ID = 1000001
+
     def check_id(self, id):
         logger.debug("Checking if %s %s is valid character id" % (type(id), id))
         id = int(id)
         api = evelink.eve.EVE()
         result = api.affiliations_for_characters(id).result[id]
-        if 'name' in result:
-            logger.debug("Determined character id %s is valid" % id)
-            return True
+        if result['name']:
+            if result['corp']['id'] != self.DOOMHEIM_CORP_ID:
+                logger.debug("Determined character id %s is valid" % id)
+                return True
+            else:
+                logger.debug("Determined character id %s has been biomassed and is invalid" % id)
+                return False
         else:
             logger.debug("Determined character id %s is invalid" % id)
             return False
@@ -69,7 +75,7 @@ class EVECorporationManager(EVEBaseManager):
             logger.debug("Determined corp id %s is valid" % id)
             return True
         except evelink.api.APIError as e:
-            if e.code == 523:
+            if int(e.code) == 523:
                 logger.debug("Determined corp id %s is invalid" % id)
                 return False
             else:
@@ -80,7 +86,7 @@ class EVEAllianceManager(EVEBaseManager):
     CREST_ALLIANCE_ENDPOINT = "https://public-crest.eveonline.com/alliances/%s/"
 
     def create(self, *args, **kwargs):
-        model = super(EVEBaseManager, self).create(*args, **kwargs)
+        model = super(EVEAllianceManager, self).create(*args, **kwargs)
         if not self.check_id(model.id):
             model.delete()
             raise ValueError("Supplied ID is invalid")

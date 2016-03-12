@@ -84,6 +84,8 @@ Started as a rewrite of the core of AllianceAuth but has ballooned to a standalo
 
 Front-end settings are going away because the admin site can already do it, and handles permissions much better than I ever could.
 
-Group management will stay web-based because you don't want group admins to be staff, that's scary.
+I just need to adminify all the models which will take a bit.
+
+ - [ ] Admin Site
 
 # Suggestions?

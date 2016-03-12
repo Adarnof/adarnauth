@@ -94,6 +94,9 @@ class EVECharacter(models.Model):
         if update_fields:
             logger.info("Finished updating character id %s from api. Changed: %s" % (self.id, update_fields))
             self.save(update_fields=update_fields)
+        if self.corp_id == EVECharacterManager.DOOMHEIM_CORP_ID:
+            logger.info("%s has been biomassed. Deleting model" % self)
+            self.delete()
         return True
 
     def get_possible_users(self):
@@ -209,7 +212,7 @@ class EVEAlliance(models.Model):
         logger.debug("Updating alliance info for alliance id %s" % self.id)
         if not alliance_info:
             logger.debug("Not passed API result. Grabbing from manager")
-            alliance_info = self.objects.get_info(self.id)
+            alliance_info = EVEAlliance.objects.get_info(self.id)
         if alliance_info['corporationsCount'] == 0:
             logger.info("%s has closed. Deleting model" % self)
             self.delete()
@@ -226,6 +229,7 @@ class EVEAlliance(models.Model):
         return True
 
 class EVEApiKeyPair(models.Model):
+    CONTACTLIST_MASK = 16
 
     TYPE_CHOICES = (
         ('account', 'account'),
@@ -241,6 +245,7 @@ class EVEApiKeyPair(models.Model):
     type = models.CharField(max_length=11, choices=TYPE_CHOICES, blank=True)
     characters = models.ManyToManyField(EVECharacter, blank=True, related_name='apis')
     corp = models.ForeignKey(EVECorporation, null=True, blank=True, related_name='apis')
+    contacts = models.BooleanField(default=False, editable=False)
 
     class Meta:
         permissions = (("api_verified", "Main character has valid API."),)
@@ -261,18 +266,21 @@ class EVEApiKeyPair(models.Model):
             return False
 
     def get_standings(self):
-        if self.type == 'corp':
-            try:
-                logger.debug("Getting corp standings with api id %s" % id)
-                api = evelink.api.API(api_key=(self.id, self.vcode))
-                corp = evelink.corp.Corp(api=api)
-                corpinfo = corp.contacts().result
-                return corpinfo
-            except evelink.api.APIError as error:
-                logger.exception("APIError occured while retrieving corp standings from api id %s" % id, exc_info=True)
-                return {}
+        if self.contacts:
+            if self.type == 'corp':
+                try:
+                    logger.debug("Getting corp standings with api id %s" % id)
+                    api = evelink.api.API(api_key=(self.id, self.vcode))
+                    corp = evelink.corp.Corp(api=api)
+                    corpinfo = corp.contacts().result
+                    return corpinfo
+                except evelink.api.APIError as error:
+                    logger.exception("APIError occured while retrieving corp standings from api id %s" % id, exc_info=True)
+                    return {}
+            else:
+                raise NotImplementedError('Only corp keys are supported')
         else:
-            raise NotImplementedError('Only corp keys are supported')
+            raise AttributeError("%s lacks access mask 16 (ContactList)" % self)
 
     def update(self):
         chars = []
@@ -288,6 +296,14 @@ class EVEApiKeyPair(models.Model):
             if key_info['access_mask'] != self.access_mask:
                 self.access_mask = key_info['access_mask']
                 update_fields.append('access_mask')
+            if self.access_mask & self.CONTACTLIST_MASK == self.CONTACTLIST_MASK:
+                if not self.contacts:
+                    self.contacts = True
+                    update_fields.append('contacts')
+            else:
+                if self.contacts:
+                    self.contacts = False
+                    update_fields.append('contacts')
             api_chars = account.characters().result
             for char in self.characters.all():
                 if not char.id in api_chars:
@@ -346,7 +362,7 @@ class EVEContactSet(models.Model):
         ('alliance', 'alliance'),
     )
 
-    source_api = models.OneToOneField(EVEApiKeyPair, on_delete=models.CASCADE, limit_choices_to={'type': 'corp'})
+    source_api = models.OneToOneField(EVEApiKeyPair, on_delete=models.CASCADE, limit_choices_to={'type': 'corp', 'contacts': True})
     minimum_standing = models.IntegerField()
     level = models.CharField(max_length=10, choices=LEVEL_CHOICES)
 
