@@ -12,7 +12,7 @@ Started as a rewrite of the core of AllianceAuth but has ballooned to a standalo
    - [x] Fetch from public API
    - [x] Async update task
    - [x] Determine owning user
-   - [ ] Handle character deletion
+   - [x] Handle character deletion
  - [x] Corp
    - [x] Fetch from public API
    - [x] Async update task
