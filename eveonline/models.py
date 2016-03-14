@@ -5,7 +5,7 @@ import logging
 import evelink
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
-from managers import EVECharacterManager, EVECorporationManager, EVEAllianceManager, EVEContactManager
+from managers import EVECharacterManager, EVECorporationManager, EVEAllianceManager, EVEContactManager, EVEApiKeyPairManager
 
 logger = logging.getLogger(__name__)
 
@@ -229,7 +229,6 @@ class EVEAlliance(models.Model):
         return True
 
 class EVEApiKeyPair(models.Model):
-    CONTACTLIST_MASK = 16
 
     TYPE_CHOICES = (
         ('account', 'account'),
@@ -245,7 +244,8 @@ class EVEApiKeyPair(models.Model):
     type = models.CharField(max_length=11, choices=TYPE_CHOICES, blank=True)
     characters = models.ManyToManyField(EVECharacter, blank=True, related_name='apis')
     corp = models.ForeignKey(EVECorporation, null=True, blank=True, related_name='apis')
-    contacts = models.BooleanField(default=False, editable=False)
+
+    objects = EVEApiKeyPairManager()
 
     class Meta:
         permissions = (("api_verified", "Main character has valid API."),)
@@ -296,14 +296,6 @@ class EVEApiKeyPair(models.Model):
             if key_info['access_mask'] != self.access_mask:
                 self.access_mask = key_info['access_mask']
                 update_fields.append('access_mask')
-            if self.access_mask & self.CONTACTLIST_MASK == self.CONTACTLIST_MASK:
-                if not self.contacts:
-                    self.contacts = True
-                    update_fields.append('contacts')
-            else:
-                if self.contacts:
-                    self.contacts = False
-                    update_fields.append('contacts')
             api_chars = account.characters().result
             for char in self.characters.all():
                 if not char.id in api_chars:
@@ -362,7 +354,7 @@ class EVEContactSet(models.Model):
         ('alliance', 'alliance'),
     )
 
-    source_api = models.OneToOneField(EVEApiKeyPair, on_delete=models.CASCADE, limit_choices_to={'type': 'corp', 'contacts': True})
+    source_api = models.OneToOneField(EVEApiKeyPair, on_delete=models.CASCADE, limit_choices_to=EVEApiKeyPair.objects.get_contact_source_apis)
     minimum_standing = models.IntegerField()
     level = models.CharField(max_length=10, choices=LEVEL_CHOICES)
 

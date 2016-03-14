@@ -121,6 +121,17 @@ class EVEAllianceManager(EVEBaseManager):
             e.timestamp = datetime.datetime.utcnow()
             raise e
 
+class EVEApiKeyPairManager(models.Manager):
+    CONTACTLIST_MASK = 16
+
+    def get_contact_source_apis(self):
+        choices = []
+        apis = super(EVEApiKeyPairManager,self).get_queryset().filter(type='corp').filter(is_valid=True)
+        for api in apis:
+            if api.access_mask & self.CONTACTLIST_MASK == self.CONTACTLIST_MASK:
+                choices.append(api.pk)
+        return {'pk__in':choices}
+
 class EVEManager:
 
     @staticmethod
