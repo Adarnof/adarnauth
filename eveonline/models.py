@@ -156,7 +156,7 @@ class EVECorporation(models.Model):
             try:
                 result = api.corporation_sheet(corp_id=self.id).result
             except evelink.api.APIError as e:
-                if e.code == 523:
+                if int(e.code) == 523:
                     logger.info("%s has closed. Deleting model" % self)
                     self.delete()
                 else:
@@ -261,9 +261,12 @@ class EVEApiKeyPair(models.Model):
             info = account.key_info()
             logger.debug("Verified api id %s is valid." % id)
             return True
-        except:
-            logger.debug("API id %s is invalid." % id)
-            return False
+        except evelink.api.APIError as e:
+            if int(e.code) == 403:
+                logger.debug("API id %s is invalid." % id)
+                return False
+            else:
+                raise e
 
     def get_standings(self):
         if self.contacts:
@@ -327,9 +330,9 @@ class EVEApiKeyPair(models.Model):
                 logger.info("%s updated %s" % (self, update_fields))
                 self.save(update_fields=update_fields)
         except evelink.api.APIError as e:
-            if e.code in [500, 520]:
+            if int(e.code) in [500, 520]:
                 logger.error("EVE API servers encountered an error. Unable to update %s" % self)
-            elif e.code in [221]:
+            elif int(e.code) in [221]:
                 logger.error("API hiccup prevented updating %s" % self)
             else:
                 logger.info("%s is invalid, error code %s" % (self, e.code))
