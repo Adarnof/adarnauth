@@ -240,7 +240,7 @@ class EVEApiKeyPair(models.Model):
     vcode = models.CharField(max_length=254)
     owner = models.ForeignKey('authentication.User', null=True, blank=True)
     is_valid = models.NullBooleanField(blank=True)
-    access_mask = models.IntegerField(default=0)
+    access_mask = models.IntegerField(default=0, blank=True)
     type = models.CharField(max_length=11, choices=TYPE_CHOICES, blank=True)
     characters = models.ManyToManyField(EVECharacter, blank=True, related_name='apis')
     corp = models.ForeignKey(EVECorporation, null=True, blank=True, related_name='apis')

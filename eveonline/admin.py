@@ -3,6 +3,11 @@ from django import forms
 from models import EVECharacter, EVECorporation, EVEAlliance, EVEApiKeyPair, EVEContact, EVEContactSet
 
 class EVECharacterForm(forms.ModelForm):
+    owner = forms.CharField(widget=forms.TextInput(attrs={'readonly': True}), required=False)
+
+    class Meta:
+        exclude = ['user']
+
     def __init__(self, *args, **kwargs):
         super(EVECharacterForm, self).__init__(*args, **kwargs)
         self.fields['name'].widget.attrs['readonly'] = True
@@ -13,8 +18,10 @@ class EVECharacterForm(forms.ModelForm):
         self.fields['faction_id'].widget.attrs['readonly'] = True
         self.fields['faction_name'].widget.attrs['readonly'] = True
         instance = getattr(self, 'instance', None)
-        if instance.pk:
+        if instance and instance.pk:
             self.fields['id'].widget.attrs['readonly'] = True
+            self.fields['owner'].initial = str(instance.user)
+
     def clean_id(self):
         instance = getattr(self, 'instance', None)
         if instance and instance.pk:
@@ -158,38 +165,127 @@ class EVEAllianceForm(forms.ModelForm):
             return None
 
 class EVEApiKeyPairForm(forms.ModelForm):
+    corporation = forms.CharField(widget=forms.TextInput(attrs={'readonly': True}), required=False)
+    characters_on_key = forms.CharField(widget=forms.Textarea(attrs={'readonly': True}), required=False)
+
+    class Meta:
+        exclude = ['corp', 'characters']
+
     def __init__(self, *args, **kwargs):
-        super(EVEAllianceForm, self).__init__(*args, **kwargs)
-        self.fields['name'].widget.attrs['readonly'] = True
-        self.fields['ticker'].widget.attrs['readonly'] = True
-        instance = getattr(self, 'instance', None)
-        if instance.pk:
-            self.fields['id'].widget.attrs['readonly'] = True
-    def clean_id(self):
+        super(EVEApiKeyPairForm, self).__init__(*args, **kwargs)
         instance = getattr(self, 'instance', None)
         if instance and instance.pk:
-            if self.cleaned_data['id'] != instance.id:
-                raise forms.ValidationError("Cannot change once set")
-            else:
-                return instance.id
-        else:
-            if EVEAlliance.objects.check_id(self.cleaned_data['id']):
-                return self.cleaned_data['id']
-            else:
-                raise forms.ValidationError("Failed to verify ID via CREST")
-    def clean_name(self):
+            self.fields['id'].widget.attrs['readonly'] = True
+            self.fields['vcode'].widget.attrs['readonly'] = True
+        self.fields['is_valid'].widget.attrs['disabled'] = True
+        self.fields['type'].widget.attrs['disabled'] = True
+        self.fields['access_mask'].widget.attrs['readonly'] = True
+        if instance:
+            self.fields['corporation'].initial = str(instance.corp)
+            chars = ""
+            for char in instance.characters.all():
+                chars = chars + str(char) + "\n"
+            self.fields['characters_on_key'].initial = chars.strip("\n")
+    def clean_is_valid(self):
         instance = getattr(self, 'instance', None)
         if instance:
-            return instance.name
+            return instance.is_valid
         else:
             return None
-    def clean_ticker(self):
+    def clean_access_mask(self):
         instance = getattr(self, 'instance', None)
         if instance:
-            return instance.ticker
+            return instance.access_mask
+        else:
+            return 0
+    def clean_type(self):
+        instance = getattr(self, 'instance', None)
+        if instance:
+            return instance.type
+        else:
+            return None
+    def clean_corp(self):
+        instance = getattr(self, 'instance', None)
+        if instance:
+            return instance.corp
+        else:
+            return None
+    def clean_is_valid(self):
+        instance = getattr(self, 'instance', None)
+        if instance:
+            return instance.is_valid
         else:
             return None
 
+class EVEContactForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(EVEContactForm, self).__init__(*args, **kwargs)
+        instance = getattr(self, 'instance', None)
+        if instance and instance.pk:
+            self.fields['standing'].widget.attrs['readonly'] = True
+            self.fields['object_id'].widget.attrs['readonly'] = True
+            self.fields['object_name'].widget.attrs['readonly'] = True
+    def clean_standing(self):
+        instance = getattr(self, 'instance', None)
+        if instance:
+            return instance.standing
+        else:
+            return self.cleaned_data['standing']
+    def clean_object_id(self):
+        instance = getattr(self, 'instance', None)
+        if instance:
+            return instance.object_id
+        else:
+            return self.cleaned_data['object_id']
+    def clean_object_name(self):
+        instance = getattr(self, 'instance', None)
+        if instance:
+            return instance.object_name
+        else:
+            return self.cleaned_data['object_name']
+    def clean_type(self):
+        instance = getattr(self, 'instance', None)
+        if instance:
+            return instance.type
+        else:
+            return self.cleaned_data['type']
+    def clean_contact_source(self):
+        instance = getattr(self, 'instance', None)
+        if instance and instance.pk:
+            if self.cleaned_data['contact_source'] != instance.contact_source:
+                self.data['contact_source'] = instance.contact_source
+                raise forms.ValidationError("Cannot change once set")
+            return instance.contact_source
+        return self.cleaned_data['contact_source']
+
+class EVEContactSetForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(EVEContactSetForm, self).__init__(*args, **kwargs)
+        instance = getattr(self, 'instance', None)
+        if instance and instance.pk:
+            self.fields['minimum_standing'].widget.attrs['readonly'] = True
+            self.fields['level'].widget.attrs['disabled'] = True
+
+    def clean_minimum_standing(self):
+        instance = getattr(self, 'instance', None)
+        if instance and instance.pk:
+            return instance.minimum_standing
+        else:
+            return self.cleaned_data['minimum_standing']
+    def clean_level(self):
+        instance = getattr(self, 'instance', None)
+        if instance and instance.pk:
+            return instance.level
+        else:
+            return self.cleaned_data['level']
+    def clean_source_api(self):
+        instance = getattr(self, 'instance', None)
+        if instance and instance.pk:
+            if self.cleaned_data['source_api'] != instance.source_api:
+                self.data['source_api'] = instance.source_api
+                raise forms.ValidationError("Cannot change once set")
+            return instance.source_api
+        return self.cleaned_data['source_api']
 
 @admin.register(EVECharacter)
 class EVECharacterAdmin(admin.ModelAdmin):
@@ -203,6 +299,12 @@ class EVECorporationAdmin(admin.ModelAdmin):
 class EVEAllianceAdmin(admin.ModelAdmin):
     form = EVEAllianceForm
 
-admin.site.register(EVEApiKeyPair)
-admin.site.register(EVEContact)
+@admin.register(EVEApiKeyPair)
+class EVEApiKeyPairAdmin(admin.ModelAdmin):
+    form = EVEApiKeyPairForm
+
+@admin.register(EVEContact)
+class EVEContactAdmin(admin.ModelAdmin):
+    form = EVEContactForm
+
 admin.site.register(EVEContactSet)

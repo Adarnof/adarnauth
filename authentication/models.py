@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 # Custom user model. Created based on EVE Character supplemented with an email address.
 class User(AbstractBaseUser, PermissionsMixin):
     main_character_id = models.PositiveIntegerField(primary_key=True)
-    email = models.EmailField(max_length=255, null=True, blank=True, unique=True)
+    email = models.EmailField(max_length=255, null=True, blank=True)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)
 
@@ -66,6 +66,7 @@ class CallbackRedirect(models.Model):
     url = models.CharField(max_length=254)
     action = models.CharField(max_length=6, default='login', choices=ACTION_CHOICES)
     session_key = models.CharField(max_length=254)
+    created = models.DateTimeField(auto_now_add=True)
 
     def __generate_hash(self, session_key):
         return hashlib.sha512(session_key + self.salt).hexdigest()
