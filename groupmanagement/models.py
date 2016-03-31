@@ -6,11 +6,33 @@ from django.db import models
 from managers import GroupApplicationManager, ExtendedGroupManager
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
+from access.models import get_rule_ct_filter
+
+def get_group_manager_choices():
+    choices = []
+    for u in User.objects.all():
+        if u.has_perm('groupmanagement.can_manage_groups'):
+            choices.append(u.pk)
+    return {'pk__in': choices}
+
+def get_base_group_choices():
+    choices = []
+    for g in Group.objects.all():
+        if not AutoGroup.objects.filter(group=g).exists():
+            choices.append(g.pk)
+    return {'pk__in': choices}
+
+def get_auto_group_choices():
+    choices = []
+    for g in Group.objects.all():
+        if not ExtendedGroup.objects.filter(group=g).exists():
+            choices.append(g.pk)
+    return {'pk__in': choices}
 
 class ExtendedGroup(models.Model):
-    group = models.OneToOneField(Group, on_delete=models.CASCADE)
-    owner = models.ForeignKey(User, related_name='owned_groups', on_delete=models.CASCADE)
-    admins = models.ManyToManyField(User, related_name='admin_groups', blank=True)
+    group = models.OneToOneField(Group, on_delete=models.CASCADE, limit_choices_to=get_base_group_choices)
+    owner = models.ForeignKey(User, related_name='owned_groups', on_delete=models.CASCADE, limit_choices_to=get_group_manager_choices)
+    admins = models.ManyToManyField(User, related_name='admin_groups', blank=True, limit_choices_to=get_group_manager_choices)
     parent = models.ForeignKey('self', null=True, on_delete=models.SET_NULL, related_name='child_groups', blank=True)
     hidden = models.BooleanField(default=False, blank=True)
     description = models.CharField(max_length=254, null=True, blank=True)
@@ -89,6 +111,9 @@ class GroupApplication(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     response = models.NullBooleanField(blank=True)
     
+    class Meta:
+        unique_together = ('extended_group', 'user')
+
     def __unicode__(self):
         output = "%s application to %s" % (self.user, self.group)
         return output.encode('utf-8')
@@ -110,9 +135,9 @@ class GroupApplication(models.Model):
     objects = GroupApplicationManager()
 
 class AutoGroup(models.Model):
-    group = models.OneToOneField(Group, on_delete=models.CASCADE, unique=True)
+    group = models.OneToOneField(Group, on_delete=models.CASCADE, limit_choices_to=get_auto_group_choices)
     object_id = models.PositiveIntegerField()
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, limit_choices_to=get_rule_ct_filter)
     access_rule = GenericForeignKey('content_type', 'object_id')
 
     def __unicode__(self):

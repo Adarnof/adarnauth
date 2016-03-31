@@ -9,34 +9,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class UserAccess(models.Model):
-
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    access_rule = GenericForeignKey('content_type', 'object_id')
-    character = models.ForeignKey(EVECharacter, on_delete=models.CASCADE)
-
-    def __unicode__(self):
-        output = '%s access by rule for %s applying to %s' % (self.user, self.access_rule, self.character)
-        return output.encode('utf-8')
-
-    class Meta:
-        permissions = (("site_access", "User has access to site."), ("manage_access", "User can manage site access."), ("audit_access", "User can view access granted per rule."))
-
-    def set_rule(self, object):
-        if isinstance(object, CharacterAccessRule) or isinstance(object, CorpAccessRule) or isinstance(object, AllianceAccessRule) or isinstance(object, ContactAccess):
-            self.object_id = object.pk
-            self.access_rule = object
-        else:
-            raise TypeError("Access rule must be of type CharacterAccessRule, CorpAccessRule, AllianceAccessRule, ContactAccess")
-
-    def get_rule(self):
-        return self.access_rule
-
-    def verify(self):
-        self.save()
-
 class BaseAccessRule:
     def _validate_rule(self, characters, useraccess):
         for char in characters:
@@ -65,7 +37,7 @@ class BaseAccessRule:
 class CorpAccessRule(models.Model, BaseAccessRule):
 
     corp = models.OneToOneField(EVECorporation, models.CASCADE)
-    access = GenericRelation(UserAccess)
+    access = GenericRelation('access.UserAccess')
     auto_group = GenericRelation('groupmanagement.AutoGroup')
 
     def __unicode__(self):
@@ -82,7 +54,7 @@ class CorpAccessRule(models.Model, BaseAccessRule):
 class AllianceAccessRule(models.Model, BaseAccessRule):
 
     alliance = models.OneToOneField(EVEAlliance, models.CASCADE)
-    access = GenericRelation(UserAccess)
+    access = GenericRelation('access.UserAccess')
     auto_group = GenericRelation('groupmanagement.AutoGroup')
 
     def __unicode__(self):
@@ -99,7 +71,7 @@ class AllianceAccessRule(models.Model, BaseAccessRule):
 class CharacterAccessRule(models.Model, BaseAccessRule):
 
     character = models.OneToOneField(EVECharacter, models.CASCADE)
-    access = GenericRelation(UserAccess)
+    access = GenericRelation('access.UserAccess')
     auto_group = GenericRelation('groupmanagement.AutoGroup')
 
     def __unicode__(self):
@@ -136,7 +108,7 @@ class StandingAccessRule(models.Model):
 class ContactAccess(models.Model, BaseAccessRule):
     contact = models.ForeignKey(EVEContact, on_delete=models.CASCADE)
     standing_access = models.ForeignKey(StandingAccessRule, on_delete=models.CASCADE)
-    access = GenericRelation(UserAccess)
+    access = GenericRelation('access.UserAccess')
 
     attrs = ['id', 'corp_id', 'alliance_id', 'faction_id']
 
@@ -169,3 +141,41 @@ class ContactAccess(models.Model, BaseAccessRule):
         useraccess = self.access.all()
         characters = self.__get_applicable_characters()
         self._validate_rule(characters, useraccess)
+
+RULE_CONTENT_TYPES = [
+    ContentType.objects.get_for_model(AllianceAccessRule),
+    ContentType.objects.get_for_model(CorpAccessRule),
+    ContentType.objects.get_for_model(CharacterAccessRule),
+    ContentType.objects.get_for_model(ContactAccess),
+    ]
+
+def get_rule_ct_filter():
+    return {'pk__in': [a.pk for a in RULE_CONTENT_TYPES]}
+
+class UserAccess(models.Model):
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, limit_choices_to=get_rule_ct_filter)
+    access_rule = GenericForeignKey('content_type', 'object_id')
+    character = models.ForeignKey(EVECharacter, on_delete=models.CASCADE)
+
+    def __unicode__(self):
+        output = '%s access by rule for %s applying to %s' % (self.user, self.access_rule, self.character)
+        return output.encode('utf-8')
+
+    class Meta:
+        permissions = (("site_access", "User has access to site."), ("manage_access", "User can manage site access."), ("audit_access", "User can view access granted per rule."))
+
+    def set_rule(self, object):
+        if ContentType.objects.get_for_model(object) in RULE_CONTENT_TYPES:
+            self.object_id = object.pk
+            self.access_rule = object
+        else:
+            raise TypeError("Access rule must be of type %s" % RULE_CONTENT_TYPES)
+
+    def get_rule(self):
+        return self.access_rule
+
+    def verify(self):
+        self.save()
