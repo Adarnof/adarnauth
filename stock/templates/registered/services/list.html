@@ -1,0 +1,49 @@
+{% extends "public/base.html" %}
+{% load staticfiles %}
+
+{% block title %}{{ type }}{% endblock %}
+
+{% block content %}
+    <div class="col-lg-12">
+        <h1 class="page-header text-center">{{ type }}</h1>
+        {% for s, dp in services.items %}
+            <div class="col-lg-4">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">{{ s.name }}</div>
+                    <table class="table">
+                        <tr>
+                            {% for entry, value in dp.items %}
+                                <th class="text-center">{{ entry|capfirst }}</th>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            {% for entry, value in dp.items %}
+                                <td class="text-center">{{ value }}</td>
+                            {% endfor %}
+                        </tr>
+                    </table>
+                    <div class="panel-footer text-center">
+                        {% if dp %}
+                            {% with password=type|lower|add:"_password" %}
+                                <a href="{% url password s.pk %}" class="btn btn-warning" title="Change Password">
+                                    <span class="glyphicon glyphicon-pencil"></span>
+                                </a>
+                            {% endwith %}
+                            {% with deactivate=type|lower|add:"_deactivate" %}
+                                <a href="{% url deactivate s.pk %}" class="btn btn-danger" title="Deactivate">
+                                    <span class="glyphicon glyphicon-remove"></span>
+                                </a>
+                            {% endwith %}
+                        {% else %}
+                            {% with activate=type|lower|add:"_activate" %}
+                                <a href="{% url activate s.pk %}" class="btn btn-success" title="Activate">
+                                    <span class="glyphicon glyphicon-ok"></span>
+                                </a>
+                            {% endwith %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

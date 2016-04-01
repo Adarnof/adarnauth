@@ -21,6 +21,7 @@ import groupmanagement.views
 import access.views
 import eveonline.views
 import openfire.views
+import mumble.views
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
@@ -76,4 +77,10 @@ urlpatterns = [
     url(r'^openfire/add/$', openfire.views.openfireservice_add, name='openfire_service_add'),
     url(r'^openfire/(\d*)/edit/$', openfire.views.openfireservice_change, name='openfire_service_edit'),
     url(r'^openfire/(\d*)/delete/$', openfire.views.openfireservice_delete, name='openfire_service_delete'),
+
+    # mumble
+    url(r'^mumble/$', mumble.views.mumble_list, name='mumble_list'),
+    url(r'^mumble/(\d*)/activate/$', mumble.views.mumble_activate, name='mumble_activate'),
+    url(r'^mumble/(\d*)/password/$', mumble.views.mumble_password, name='mumble_password'),
+    url(r'^mumble/(\d*)/deactivate/$', mumble.views.mumble_deactivate, name='mumble_deactivate'),
 ]

@@ -43,7 +43,9 @@ class BaseServiceModel(models.Model):
         raise NotImplementedError
 
     def check_user_has_access(self, user):
-        if user.has_perm('access.site_access'):
+        if user.is_superuser:
+            return True
+        elif user.has_perm('access.site_access'):
             if self.required_groups.all().exists():
                 if self.required_groups.all() in user.groups.all():
                     return True
