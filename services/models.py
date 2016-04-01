@@ -6,13 +6,13 @@ import re
 import os
 
 class BaseServiceModel(models.Model):
-    name = models.CharField(max_length=254)
-    required_groups = models.ManyToManyField(Group)
+    name = models.CharField(max_length=254, unique=True)
+    required_groups = models.ManyToManyField(Group, blank=True)
 
-    def __santatize_username(self, username):
-        return re.sub(r'[^\w+]+', '_', username) 
-    
-    def __generate_random_pass(self):
+    def _sanatize_username(self, username):
+        return re.sub(r'[^\w+]+', '_', username.strip())
+
+    def _generate_random_pass(self):
         return os.urandom(8).encode('hex')
 
     def add_user(self, user):

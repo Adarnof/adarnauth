@@ -224,7 +224,7 @@ class Phpbb3Service(BaseServiceModel):
         logger.debug("Adding user %s to phpbb service %s with username %s" % (user, self, username))
         if not password:
             logger.debug("No password supplied. Generating random.")
-            password = self.__generate_random_pass()
+            password = self._generate_random_pass()
         self.__add_user(username, password)
         user_id = self.__get_user_id(username)
         if user_id:
@@ -248,7 +248,7 @@ class Phpbb3Service(BaseServiceModel):
         if Phpbb3User.objects.filter(user=user).filter(servive=self).exists():
             user_model = Phpbb3User.objects.get(user=user, service=service)
             if not password:
-                password = self.__generate_random_pass()
+                password = self._generate_random_pass()
             logger.info("Updating user %s password on phpbb service %s" % (user, self))
             self.__update_user_info(user_model.username, password)
         else:

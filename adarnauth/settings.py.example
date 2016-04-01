@@ -204,6 +204,10 @@ LOGGING = {
             'handlers': ['debug_file', 'console'],
             'level': 'DEBUG',
         },
+        'mumble': {
+            'handlers': ['debug_file', 'console', 'info_file',],
+            'level': 'DEBUG',
+        },
     }
 }
 

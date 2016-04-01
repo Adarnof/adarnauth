@@ -117,7 +117,7 @@ class OpenfireService(BaseServiceModel):
         logger.debug("Adding user %s to openfire service %s with username %s" % (user, self, username))
         if not password:
             logger.debug("No password supplied. Generating random.")
-            password = self.__generate_random_pass()
+            password = self._generate_random_pass()
         self._add_user(username, password)
         logger.info("Creating OpenfireUser model for user %s on service %s" % (user, self))
         user_model = OpenfireUser(user=user, username=username, service=self)
@@ -135,7 +135,7 @@ class OpenfireService(BaseServiceModel):
         if OpenfireUser.objects.filter(service=self).filter(user=user).exists():
             user_model = OpenfireUser.objects.get(service=self, user=user)
             if not password:
-                password = self.__generate_random_pass()
+                password = self._generate_random_pass()
             logger.info("Updating user %s password on openfire service %s" % (user, self))
             api = ofrestapi.users.Users(self.restapi_address, self.restapi_secret_key)
             api.update_user(user_model.username, password=password)
