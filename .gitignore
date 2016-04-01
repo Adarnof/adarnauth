@@ -14,6 +14,7 @@ phpbb/migrations/*
 openfire/migrations/*
 services/migrations/*
 ldap_service/migrations/*
+mumble/migrations/*
 
 # virtualenv
 bin/*
