@@ -53,14 +53,20 @@ Started as a rewrite of the core of AllianceAuth but has ballooned to a standalo
 
  - [x] Process SSO callback
  - [x] Generate missing user accounts
+ - [ ] Owner hash matching
  - [x] Internal redirect
    - [x] Hash matching
    - [x] Session identity verification
    - [x] View redirect
-   - [x] Auto-cleanup
+   - [ ] Auto-cleanup
 
 ### Explicit Service Support
 
+ - [ ] Mumble
+   - [ ] Base service functions
+   - [ ] Group mapping
+   - [ ] Front-end creation
+   - [ ] Signals
  - [ ] Openfire
    - [x] Base service functions
    - [ ] Broadcast
@@ -78,14 +84,17 @@ Started as a rewrite of the core of AllianceAuth but has ballooned to a standalo
    - [ ] Group mapping
    - [ ] Front-end creation
    - [ ] Signals
- - [ ] Teamspeak?
 
-### Admin Site
+### App Admin Hardening
+Tolerate users pushing buttons on the admin site I might not like.
 
-Front-end settings are going away because the admin site can already do it, and handles permissions much better than I ever could.
-
-I just need to adminify all the models which will take a bit.
-
- - [ ] Admin Site
+ - [x] access
+ - [x] authentication
+ - [x] eveonline
+ - [x] groupmanagement
+ - [ ] ldap_service
+ - [ ] mumble
+ - [ ] openfire
+ - [ ] phpbb
 
 # Suggestions?

@@ -3,11 +3,6 @@ from django import forms
 from models import EVECharacter, EVECorporation, EVEAlliance, EVEApiKeyPair, EVEContact, EVEContactSet
 
 class EVECharacterForm(forms.ModelForm):
-    owner = forms.CharField(widget=forms.TextInput(attrs={'readonly': True}), required=False)
-
-    class Meta:
-        exclude = ['user']
-
     def __init__(self, *args, **kwargs):
         super(EVECharacterForm, self).__init__(*args, **kwargs)
         self.fields['name'].widget.attrs['readonly'] = True
@@ -17,10 +12,10 @@ class EVECharacterForm(forms.ModelForm):
         self.fields['alliance_name'].widget.attrs['readonly'] = True
         self.fields['faction_id'].widget.attrs['readonly'] = True
         self.fields['faction_name'].widget.attrs['readonly'] = True
+        self.fields['user'].widget.attrs['disabled'] = True
         instance = getattr(self, 'instance', None)
         if instance and instance.pk:
             self.fields['id'].widget.attrs['readonly'] = True
-            self.fields['owner'].initial = str(instance.user)
 
     def clean_id(self):
         instance = getattr(self, 'instance', None)
@@ -76,6 +71,18 @@ class EVECharacterForm(forms.ModelForm):
             return instance.faction_id
         else:
             return None
+    def clean_user(self):
+        instance = getattr(self, 'instance', None)
+        if instance and instance.pk:
+            if self.cleaned_data['user'] != instance.user:
+                self.data['user'] = instance.user
+                raise forms.ValidationError("Automatically determined, cannot be manually set")
+            else:
+                return instance.user
+        elif self.cleaned_data['user']:
+            self.data['user'] = None
+            raise forms.ValidationError("Automatically determined, cannot be manually set")
+        return None
 
 class EVECorporationForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
@@ -165,11 +172,10 @@ class EVEAllianceForm(forms.ModelForm):
             return None
 
 class EVEApiKeyPairForm(forms.ModelForm):
-    corporation = forms.CharField(widget=forms.TextInput(attrs={'readonly': True}), required=False)
     characters_on_key = forms.CharField(widget=forms.Textarea(attrs={'readonly': True}), required=False)
 
     class Meta:
-        exclude = ['corp', 'characters']
+        exclude = ['characters']
 
     def __init__(self, *args, **kwargs):
         super(EVEApiKeyPairForm, self).__init__(*args, **kwargs)
@@ -180,8 +186,8 @@ class EVEApiKeyPairForm(forms.ModelForm):
         self.fields['is_valid'].widget.attrs['disabled'] = True
         self.fields['type'].widget.attrs['disabled'] = True
         self.fields['access_mask'].widget.attrs['readonly'] = True
+        self.fields['corp'].widget.attrs['disabled'] = True
         if instance:
-            self.fields['corporation'].initial = str(instance.corp)
             chars = ""
             for char in instance.characters.all():
                 chars = chars + str(char) + "\n"
@@ -204,18 +210,25 @@ class EVEApiKeyPairForm(forms.ModelForm):
             return instance.type
         else:
             return None
-    def clean_corp(self):
-        instance = getattr(self, 'instance', None)
-        if instance:
-            return instance.corp
-        else:
-            return None
     def clean_is_valid(self):
         instance = getattr(self, 'instance', None)
         if instance:
             return instance.is_valid
         else:
             return None
+    def clean_corp(self):
+        instance = getattr(self, 'instance', None)
+        if instance and instance.pk:
+            if self.cleaned_data['corp'] != instance.corp:
+                self.data['corp'] = instance.corp
+                raise forms.ValidationError("Automatically determined, cannot be manually set")
+            else:
+                return instance.corp
+        elif self.cleaned_data['corp']:
+            self.data['corp'] = None
+            raise forms.ValidationError("Automatically determined, cannot be manually set")
+        return None
+
 
 class EVEContactForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
