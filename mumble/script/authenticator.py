@@ -505,7 +505,7 @@ def do_main_program():
             # get all group ids
             groups = []
             try:
-                sql = 'SELECT id FROM %smumble_mumbleuser_mumblegroups WHERE mumbleuser_id = %%s' % cfg.database.prefix
+                sql = 'SELECT mumblegroup_id FROM %smumble_mumbleuser_mumblegroups WHERE mumbleuser_id = %%s' % cfg.database.prefix
                 cur = threadDB.execute(sql, [uid])
             except threadDbException:
                 return (FALL_THROUGH, None, None)
@@ -519,8 +519,8 @@ def do_main_program():
                 except threadDbException:
                     return (FALL_THROUGH, None, None)
                 groups.append(gcur.fetchone())
-                res = cur.fetchone()
                 gcur.close()
+                res = cur.fetchone()
             cur.close()
 
             if adarnauth_check_hash(name, pw, upwhash):
