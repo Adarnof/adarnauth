@@ -14,8 +14,8 @@ class MumbleService(BaseServiceModel):
     address = models.CharField(max_length=254)
     port = models.PositiveIntegerField(default=65535)
 
-    def __hash(self, username, password):
-        return hashlib.sha1(username+password)
+    def _hash(self, username, password):
+        return hashlib.sha1(username+password).hexdigest()
 
     def test_connection(self):
         return True
@@ -63,7 +63,7 @@ class MumbleService(BaseServiceModel):
         if not password:
             logger.debug("No password supplied. Generating random.")
             password = self._generate_random_pass()
-        model = MumbleUser.objects.create(service=self, username=str(user), pwhash=self.__hash(str(user), password), user=user)
+        model = MumbleUser.objects.create(service=self, username=str(user), pwhash=self._hash(str(user), password), user=user)
         return {'username': str(user), 'password': password}
 
     def remove_user(self, user):
@@ -76,7 +76,7 @@ class MumbleService(BaseServiceModel):
         if not password:
             password = self._generate_random_pass()
         logger.info("Updating user %s password on mumble service %s" % (user, self))
-        user_model.pwhash = self.__hash(user_model.username, password)
+        user_model.pwhash = self._hash(user_model.username, password)
         user_model.save(update_fields=['pwhash'])
         return {'username': user_model.username, 'password': password}
 
