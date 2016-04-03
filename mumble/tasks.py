@@ -23,7 +23,7 @@ def post_save_mumbleuser(sender, instance, *args, **kwargs):
 @receiver(post_delete, sender=Group)
 def post_delete_group(sender, instance, *args, **kwargs):
     logger.debug("Received post_delete signal from group %s" % instance)
-    for g in group.mumblegroup_set.all():
+    for g in instance.mumblegroup_set.all():
         for u in g.mumbleuser_set.all():
             u.service.update_user_groups(u.user)
 

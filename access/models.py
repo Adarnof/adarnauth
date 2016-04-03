@@ -166,6 +166,7 @@ class UserAccess(models.Model):
 
     class Meta:
         permissions = (("site_access", "User has access to site."), ("manage_access", "User can manage site access."), ("audit_access", "User can view access granted per rule."))
+        verbose_name_plural = "User access"
 
     def set_rule(self, object):
         if ContentType.objects.get_for_model(object) in RULE_CONTENT_TYPES:

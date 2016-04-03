@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import Group
 
 class GroupAddForm(forms.Form):
-    name = forms.CharField(max_length=254, label='Group Name', required=True)
+    name = forms.CharField(max_length=80, label='Group Name', required=True)
     description = forms.CharField(max_length=254, label='Description', required=True)
     hidden = forms.BooleanField(required=False, label='Hidden', initial=False)
     applications = forms.BooleanField(required=False, initial=False, label='Require Application to Join')

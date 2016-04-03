@@ -187,7 +187,7 @@ class EVEApiKeyPairForm(forms.ModelForm):
         self.fields['type'].widget.attrs['disabled'] = True
         self.fields['access_mask'].widget.attrs['readonly'] = True
         self.fields['corp'].widget.attrs['disabled'] = True
-        if instance:
+        if instance and instance.pk:
             chars = ""
             for char in instance.characters.all():
                 chars = chars + str(char) + "\n"
