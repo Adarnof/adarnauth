@@ -7,4 +7,5 @@ pymysql
 passlib
 python-ldap
 MySQL-python
+docutils
 git+git://github.com/seamus-45/openfire-restapi.git

@@ -9,7 +9,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class BaseAccessRule:
+class BaseAccessRule(models.Model):
     def _validate_rule(self, characters, useraccess):
         for char in characters:
             if not char.user:
@@ -34,7 +34,7 @@ class BaseAccessRule:
         logger.debug("Completed validating access rule for %s" % self)
 
 
-class CorpAccessRule(models.Model, BaseAccessRule):
+class CorpAccessRule(BaseAccessRule):
 
     corp = models.OneToOneField(EVECorporation, models.CASCADE)
     access = GenericRelation('access.UserAccess')
@@ -51,7 +51,7 @@ class CorpAccessRule(models.Model, BaseAccessRule):
         useraccess = self.access.all()
         self._validate_rule(characters, useraccess)
 
-class AllianceAccessRule(models.Model, BaseAccessRule):
+class AllianceAccessRule(BaseAccessRule):
 
     alliance = models.OneToOneField(EVEAlliance, models.CASCADE)
     access = GenericRelation('access.UserAccess')
@@ -68,7 +68,7 @@ class AllianceAccessRule(models.Model, BaseAccessRule):
         useraccess = self.access.all()
         self._validate_rule(characters, useraccess)
 
-class CharacterAccessRule(models.Model, BaseAccessRule):
+class CharacterAccessRule(BaseAccessRule):
 
     character = models.OneToOneField(EVECharacter, models.CASCADE)
     access = GenericRelation('access.UserAccess')
@@ -105,7 +105,7 @@ class StandingAccessRule(models.Model):
         for ca in self.contactaccess_set.all():
             ca.generate_useraccess()
 
-class ContactAccess(models.Model, BaseAccessRule):
+class ContactAccess(BaseAccessRule):
     contact = models.ForeignKey(EVEContact, on_delete=models.CASCADE)
     standing_access = models.ForeignKey(StandingAccessRule, on_delete=models.CASCADE)
     access = GenericRelation('access.UserAccess')
@@ -142,14 +142,14 @@ class ContactAccess(models.Model, BaseAccessRule):
         characters = self.__get_applicable_characters()
         self._validate_rule(characters, useraccess)
 
-RULE_CONTENT_TYPES = [
-    ContentType.objects.get_for_model(AllianceAccessRule),
-    ContentType.objects.get_for_model(CorpAccessRule),
-    ContentType.objects.get_for_model(CharacterAccessRule),
-    ContentType.objects.get_for_model(ContactAccess),
+def get_rule_ct_filter():
+    RULE_CONTENT_TYPES = [
+        ContentType.objects.get_for_model(AllianceAccessRule),
+        ContentType.objects.get_for_model(CorpAccessRule),
+        ContentType.objects.get_for_model(CharacterAccessRule),
+        ContentType.objects.get_for_model(ContactAccess),
     ]
 
-def get_rule_ct_filter():
     return {'pk__in': [a.pk for a in RULE_CONTENT_TYPES]}
 
 class UserAccess(models.Model):

@@ -14,8 +14,9 @@ Including another URLconf
     2. Import the include() function: from django.conf.urls import url, include
     3. Add a URL to urlpatterns:  url(r'^blog/', include(blog_urls))
 """
-from django.conf.urls import url
+from django.conf.urls import url, include
 from django.contrib import admin
+from django.contrib import admindocs
 import authentication.views
 import groupmanagement.views
 import access.views
@@ -24,7 +25,10 @@ import openfire.views
 import mumble.views
 
 urlpatterns = [
+    url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
     url(r'^admin/', admin.site.urls),
+
+    url(r'^eve_sso/', include('eve_sso.urls')),
 
     # authentication
     url(r'^$', authentication.views.profile_view, name='auth_profile'),
