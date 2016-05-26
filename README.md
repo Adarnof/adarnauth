@@ -17,11 +17,11 @@ Two means repackaging all the functions into little lego blocks I can play with 
 
 ## I've come up with a series of django apps I need to create:
 
-### SSO Token Management
+### SSO Token Management - Done!
 
-This app will be responsible for storing SSO tokens for use with CREST-capable apps. It needs to handle redirects and callbacks, and be able to filter tokens by granted scopes.
+This app is responsible for storing SSO tokens for use with CREST-capable apps. It handles redirects and callbacks, and is able to filter tokens by granted scopes.
 
-Work has begun: [adarnauth-eve-sso](https://github.com/Adarnof/adarnauth-eve-sso)
+[adarnauth-eve-sso](https://github.com/Adarnof/adarnauth-eve-sso)
 
 ### EVE Model Management
 

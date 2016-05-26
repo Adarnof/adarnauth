@@ -3,60 +3,21 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 import logging
 from django.conf import settings
-from models import CallbackRedirect, User
+from eve_sso.decorators import token_required
 
 logger = logging.getLogger(__name__)
 
-# Create your views here.
-def sso_login(request):
-    code = request.GET.get('code', None)
-    state = request.GET.get('state', None)
-    logger.debug("SSO redirect received for state %s with code %s" % (state, code))
-    if CallbackRedirect.objects.filter(hash=state).exists():
-        model = CallbackRedirect.objects.get(hash=state)
-        if model.action == 'login':
-            if model.validate(request):
-                model.delete()
-                user = authenticate(code=code)
-                if user is not None:
-                    if user.is_active:
-                        login(request, user)
-                        logger.info("Login succesful for %s" % user)
-                        return redirect(model.url)
-                    else:
-                        #redirect to disabled account page
-                        logger.info("Login unsuccesful for %s: account marked inactive." % user)
-                        return redirect('auth_login_user')
-                else:
-                    #return to login failed page
-                    logger.info("Login unsuccesful: no user model returned.")
-                    return redirect('auth_login_user')
-            else:
-                model.delete()
-                logger.warn("Failed to validate SSO callback")
-                return redirect('auth_login_user')
-        elif model.action == 'verify':
-            return redirect(model.url + '?state=' + state + '&code=' + code)
-        else:
-            logger.debug("State %s not implemented." % state)
-            return redirect('auth_login_user')
-    else:
-        logger.debug("No CallbackRedirect model found for session key %s" % request.session.session_key)
-        return redirect('auth_login_user')
-
-def login_view(request):
-    if not request.session.exists(request.session.session_key):
-        request.session.create() 
-    if CallbackRedirect.objects.filter(session_key=request.session.session_key).exists() is False:
-        model = CallbackRedirect()
-        model.populate(request)
-        model.save()
-    else:
-        model = CallbackRedirect.objects.get(session_key=request.session.session_key)
-        if model.action != 'login':
-            model.action = 'login'
-            model.save()
-    return render(request, 'public/login.html', {'title':'Login', 'state':model.hash})
+@token_required(new=True)
+def login_view(request, tokens):
+    logger.debug('sso_login called')
+    token = tokens[0]
+    user = authenticate(token=token)
+    token.delete()
+    if user:
+        if user.is_active:
+            login(request, user)
+            return redirect(request.GET.get('next', '/'))
+    raise Exception
 
 def logout_view(request):
     logout(request)

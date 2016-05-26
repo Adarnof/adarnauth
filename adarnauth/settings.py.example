@@ -29,6 +29,7 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'django.contrib.admin',
+    'django.contrib.admindocs',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -44,6 +45,7 @@ INSTALLED_APPS = [
     'openfire',
     'ldap_service',
     'mumble',
+    'eve_sso',
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -72,7 +74,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'authentication.context_processors.sso',
             ],
         },
     },
@@ -87,7 +88,7 @@ WSGI_APPLICATION = 'adarnauth.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': '',
+        'NAME': 'adarnauth',
         'USER': os.environ.get('AA_DB_DEFAULT_USER', ''),
         'PASSWORD': os.environ.get('AA_DB_DEFAULT_PASSWORD', ''),
         'HOST': os.environ.get('AA_DB_DEFAULT_HOST', '127.0.0.1'),
@@ -137,16 +138,19 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "customization/static"),
     os.path.join(BASE_DIR, "stock/static"),
     ]
-STATIC_ROOT = os.path.join(BASE_DIR, "static/")
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 # Auth
 AUTH_USER_MODEL = 'authentication.User'
-AUTHENTICATION_BACKENDS = ['authentication.backends.AuthenticationBackend', 'django.contrib.auth.backends.ModelBackend']
+AUTHENTICATION_BACKENDS = [
+    'authentication.backends.TokenAuthenticationBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
 
 # SSO
-SSO_CLIENT_ID = os.environ.get('AA_SSO_CLEINT_ID', '')
-SSO_CLIENT_SECRET = os.environ.get('AA_SSO_CLIENT_SECRET', '')
-SSO_CALLBACK_URI = os.environ.get('AA_SSO_CALLBACK_URL', '')
+EVE_SSO_CLIENT_ID = os.environ.get('AA_SSO_CLEINT_ID', '')
+EVE_SSO_CLIENT_SECRET = os.environ.get('AA_SSO_CLIENT_SECRET', '')
+EVE_SSO_CALLBACK_URI = os.environ.get('AA_SSO_CALLBACK_URL', '')
 LOGIN_URL = 'auth_login_user'
 LOGIN_REDIRECT_URL = 'auth_profile'
 
@@ -171,7 +175,7 @@ LOGGING = {
             'formatter': 'verbose'
         },
         'django_file': {
-            'level': 'DEBUG',
+            'level': 'ERROR',
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'log/django.log'),
             'formatter': 'verbose'
@@ -205,7 +209,11 @@ LOGGING = {
             'level': 'DEBUG',
         },
         'mumble': {
-            'handlers': ['debug_file', 'console', 'info_file',],
+            'handlers': ['debug_file', 'console'],
+            'level': 'DEBUG',
+        },
+        'eve_sso': {
+            'handlers': ['debug_file', 'console'],
             'level': 'DEBUG',
         },
     }

@@ -34,7 +34,7 @@ urlpatterns = [
     url(r'^$', authentication.views.profile_view, name='auth_profile'),
     url(r'^login/$', authentication.views.login_view, name='auth_login_user'),
     url(r'^logout/$', authentication.views.logout_view, name='auth_logout_user'),
-    url(r'^callback/$', authentication.views.sso_login),
+#    url(r'^callback/$', authentication.views.sso_login),
 
     # groupmanagement
     url(r'^groups/$', groupmanagement.views.group_list, name='groupmanagement_group_list'),
@@ -74,7 +74,7 @@ urlpatterns = [
     url(r'^characters/api/add/$', eveonline.views.api_key_add, name='eveonline_api_key_add'),
     url(r'^characters/api/(\d*)/delete/$', eveonline.views.api_key_delete, name='eveonline_api_key_delete'),
     url(r'^characters/api/(\d*)/update/$', eveonline.views.api_key_update, name='eveonline_api_key_update'),
-    url(r'^characters/api/(\d*)/verify/$', eveonline.views.api_key_verify, name='eveonline_api_key_verify'),
+    url(r'^characters/api/(?P<api_id>\d*)/verify/$', eveonline.views.api_key_verify, name='eveonline_api_key_verify'),
 
     # openfire
     url(r'^openfire/$', openfire.views.openfireservice_list, name='openfire_service_list'),
