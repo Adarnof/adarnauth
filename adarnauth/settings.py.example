@@ -150,7 +150,7 @@ AUTHENTICATION_BACKENDS = [
 # SSO
 EVE_SSO_CLIENT_ID = os.environ.get('AA_SSO_CLEINT_ID', '')
 EVE_SSO_CLIENT_SECRET = os.environ.get('AA_SSO_CLIENT_SECRET', '')
-EVE_SSO_CALLBACK_URI = os.environ.get('AA_SSO_CALLBACK_URL', '')
+EVE_SSO_CALLBACK_URL = os.environ.get('AA_SSO_CALLBACK_URL', '')
 LOGIN_URL = 'auth_login_user'
 LOGIN_REDIRECT_URL = 'auth_profile'
 
